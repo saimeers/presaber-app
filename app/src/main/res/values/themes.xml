@@ -1,0 +1,8 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.Presaber" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/md_theme_light_primary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_light_secondaryContainer</item>
+        <item name="android:statusBarColor">@color/md_theme_light_primary</item>
+        <item name="android:navigationBarColor">@color/md_theme_light_background</item>
+    </style>
+</resources>

@@ -1,0 +1,41 @@
+# --- Android & Gradle ---
+.gradle/
+build/
+app/build/
+*/build/
+local.properties
+app/google-services.json
+
+# --- Android Studio / IntelliJ ---
+.idea/
+*.iml
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# --- Keystore & Configs ---
+*.keystore
+*.jks
+
+# --- Logs & Reports ---
+*.log
+captures/
+
+# --- External Native Build ---
+.externalNativeBuild/
+.cxx/
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
+
+# --- APKs / Releases ---
+app/release/
+*.apk
+*.aab
+
+# --- Misc ---
+/.gradle/

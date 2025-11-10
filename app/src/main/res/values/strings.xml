@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Presaber</string>
+    <string name="login_title">Iniciar sesión</string>
+    <string name="email_label">Correo electrónico</string>
+    <string name="password_label">Contraseña</string>
+    <string name="login_button">Ingresar</string>
+</resources>

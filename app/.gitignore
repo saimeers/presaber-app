@@ -1,0 +1,79 @@
+# Gradle
+.gradle/
+build/
+!gradle-wrapper.jar
+
+# Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+captures/
+.navigation/
+.cache/
+.cxx/
+
+# Local properties
+local.properties
+*.keystore
+*.jks
+
+# Firebase & Google services
+google-services.json
+app/google-services.json
+*.plist
+
+# Logs
+*.log
+
+# IntelliJ / Android Studio configuration
+.idea/caches
+.idea/libraries
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# Generated files
+gen/
+bin/
+obj/
+*.apk
+*.ap_
+*.aab
+*.dex
+
+# Gradle cache and logs
+.gradle-build/
+
+# NDK / CMake
+.externalNativeBuild/
+
+# Environment / Secrets
+.env
+.env.local
+.env.*.local
+
+# Misc
+.DS_Store
+Thumbs.db
+
+# Kotlin/Java specific
+*.kt~
+*.class
+*.jar
+*.war
+*.ear
+
+# Backup files
+*~
+*.swp
+*.swo
+*.tmp
+*.bak
+
+# Firebase Crashlytics
+fabric.properties
+crashlytics.properties
+crashlytics-build.properties
