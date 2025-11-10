@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -56,7 +57,17 @@ fun Login(onLoginClick: (String, String) -> Unit) {
                         selected = selectedTab == index,
                         onClick = { if (!accesoVerificado) selectedTab = index },
                         enabled = !accesoVerificado || selectedTab == index,
-                        label = { Text(label) }
+                        label = { Text(label) },
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor = Color(0xFFD9DFF6), // Seleccionado
+                            activeContentColor = Color(0xFF1A1B21),   // Texto seleccionado
+                            inactiveContainerColor = Color(0xFFF5F6FA), // No seleccionado (clarito)
+                            inactiveContentColor = Color(0xFF1A1B21),   // Texto no seleccionado
+                            disabledActiveContainerColor = Color(0x1A1B211A), // Disable con 10% opacidad
+                            disabledActiveContentColor = Color(0xFFB0B0B0),
+                            disabledInactiveContainerColor = Color(0x1A1B211A),
+                            disabledInactiveContentColor = Color(0xFFB0B0B0)
+                        )
                     )
                 }
             }

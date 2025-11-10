@@ -9,8 +9,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.presaber.utils.ValidationUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,18 +27,34 @@ fun LoginForm(
         value = email,
         onValueChange = onEmailChange,
         label = { Text("Correo electrónico") },
-        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-        modifier = Modifier.fillMaxWidth()
+        keyboardOptions = KeyboardOptions.Default.copy(
+            imeAction = ImeAction.Done,
+            keyboardType = KeyboardType.Email
+        ),
+        modifier = Modifier.fillMaxWidth(),
+        isError = email.isNotBlank() && !ValidationUtils.isValidEmail(email),
+        supportingText = {
+            if (email.isNotBlank() && !ValidationUtils.isValidEmail(email)) {
+                Text("Correo inválido")
+            }
+        },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Color(0xFF1976D2),
+            focusedLabelColor = Color(0xFF1976D2)
+        )
     )
-
-    Spacer(Modifier.height(12.dp))
 
     OutlinedTextField(
         value = password,
         onValueChange = onPasswordChange,
         label = { Text("Contraseña") },
         visualTransformation = PasswordVisualTransformation(),
-        modifier = Modifier.fillMaxWidth()
+        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+        modifier = Modifier.fillMaxWidth(),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Color(0xFF1976D2),
+            focusedLabelColor = Color(0xFF1976D2)
+        )
     )
 
     Spacer(Modifier.height(24.dp))
@@ -52,7 +70,10 @@ fun LoginForm(
 
     Button(
         onClick = onLoginClick,
-        modifier = Modifier.fillMaxWidth(0.7f)
+        modifier = Modifier.fillMaxWidth(0.7f),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF1976D2)
+        )
     ) {
         Text("Iniciar sesión")
     }
