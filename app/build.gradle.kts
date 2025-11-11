@@ -65,4 +65,10 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
+
+    // Coil para cargar imágenes (foto de perfil de Google)
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // Navigation Compose
+    implementation("androidx.navigation:navigation-compose:2.7.6")
 }
