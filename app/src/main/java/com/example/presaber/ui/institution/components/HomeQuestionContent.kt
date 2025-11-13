@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presaber.R
 import com.example.presaber.ui.theme.PresaberTheme
+import androidx.navigation.NavController
+import com.example.presaber.ui.components.AddCard
 
 data class SubjectArea(
     val title: String,
@@ -29,6 +31,7 @@ data class SubjectArea(
 
 @Composable
 fun HomeQuestionContent(
+    navController: NavController,
     onSubjectClick: (SubjectArea) -> Unit = {}
 ) {
     var showFabMenu by remember { mutableStateOf(false) }
@@ -84,12 +87,19 @@ fun HomeQuestionContent(
                 )
             }
 
+            item {
+                AddCard(
+                    text = "Agregar preguntas",
+                    onClick = { navController.navigate("crearPregunta") }
+                )
+            }
+
             items(subjects) { subject ->
                 SubjectCard(
                     subject = subject,
                     onClick = { onSubjectClick(subject) }
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
             }
 
             // Espacio adicional al final para que no quede detrás del FAB
@@ -109,7 +119,7 @@ fun SubjectCard(
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp),
+            .height(100.dp),
         colors = CardDefaults.elevatedCardColors(
             containerColor = Color.White
         ),
@@ -132,14 +142,14 @@ fun SubjectCard(
                 Text(
                     text = subject.title,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
+                    fontSize = 15.sp,
                     color = Color(0xFF1A1B21)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subject.description,
                     color = Color.Gray,
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     lineHeight = 16.sp
                 )
             }
@@ -167,6 +177,7 @@ fun SubjectCard(
 @Composable
 fun HomeQuestionContentPreview(){
     PresaberTheme{
-        HomeQuestionContent ()
+        val navController = androidx.navigation.compose.rememberNavController()
+        HomeQuestionContent(navController = navController)
     }
 }

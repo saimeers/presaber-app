@@ -26,21 +26,26 @@ fun AddCard(
 ) {
     Card(
         modifier = modifier
-            .width(260.dp)
-            .height(100.dp)
-            .clickable { onClick() },
+            .fillMaxWidth()
+            .height(105.dp)
+            .clickable { onClick() }
+            .padding(bottom = 13.dp),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 4.dp
+        ),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(
-            containerColor = backgroundColor
+            containerColor = Color.White
         ),
         border = CardDefaults.outlinedCardBorder()
+
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 16.dp)
+                .padding(start = 22.dp)
         ) {
             Box(
                 modifier = Modifier

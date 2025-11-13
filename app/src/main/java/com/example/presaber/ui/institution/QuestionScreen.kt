@@ -20,23 +20,23 @@ fun QuestionsScreen(
     areaIcon: Int,
     viewModel: QuestionsViewModel = viewModel()
 ) {
-    // 🔹 Observar el flujo de preguntas y loading
+    // Observar el flujo de preguntas y loading
     val preguntas by viewModel.preguntas.collectAsState()
     val loading by viewModel.loading.collectAsState()
 
     var filteredQuestions by remember { mutableStateOf<List<Pregunta>>(emptyList()) }
 
-    // 🔹 Cargar preguntas al entrar
+    // Cargar preguntas al entrar
     LaunchedEffect(idArea) {
         viewModel.cargarPreguntasPorArea(idArea)
     }
 
-    // 🔹 Actualizar la lista cuando cambian las preguntas
+    // Actualizar la lista cuando cambian las preguntas
     LaunchedEffect(preguntas) {
         filteredQuestions = preguntas
     }
 
-    // 🔹 Layout principal
+    // Layout principal
     InstitutionLayout(
         selectedNavItem = 2,
         onNavItemSelected = {},
@@ -44,10 +44,10 @@ fun QuestionsScreen(
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
 
-            // 🔹 Encabezado del área
+            // Encabezado del área
             AreaHeader(nombreArea = areaName, icono = areaIcon)
 
-            // 🔹 Barra de búsqueda
+            // Barra de búsqueda
             QuestionsHeader(
                 onSearch = { query ->
                     filteredQuestions = if (query.isBlank()) {
@@ -61,13 +61,13 @@ fun QuestionsScreen(
                 onFilterClick = { println("Filtro presionado") }
             )
 
-            // 🔹 Mostrar indicador de carga
+            // Mostrar indicador de carga
             if (loading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                     CircularProgressIndicator()
                 }
             } else {
-                // 🔹 Mostrar lista de preguntas
+                //  Mostrar lista de preguntas
                 QuestionsList(
                     questions = filteredQuestions.map {
                         QuestionItem(

@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.presaber.ui.institution.components.SubjectArea
+import com.example.presaber.ui.institution.CrearPreguntaScreen
 
 @Composable
 fun InstitutionNavHost() {
@@ -19,12 +20,18 @@ fun InstitutionNavHost() {
         // Pantalla principal (lista de áreas)
         composable("homeQuestion") {
             HomeQuestion(
+                navController = navController,
                 onNavigateToSubject = { subject: SubjectArea ->
                     navController.navigate(
                         "questions/${subject.title}/${subject.imageRes}"
                     )
                 }
             )
+        }
+
+        // 🔹 Pantalla para crear una pregunta
+        composable("crearPregunta") {
+            CrearPreguntaScreen(navController)
         }
 
         // Pantalla de preguntas por área

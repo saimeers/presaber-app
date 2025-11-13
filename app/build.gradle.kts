@@ -71,6 +71,7 @@ dependencies {
 
     // Navigation Compose
     implementation("androidx.navigation:navigation-compose:2.7.6")
+    implementation("androidx.compose.material3:material3:1.3.1")
 
 
 
