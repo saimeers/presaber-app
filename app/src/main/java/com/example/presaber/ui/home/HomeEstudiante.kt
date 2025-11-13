@@ -1,51 +1,102 @@
 package com.example.presaber.ui.home
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import com.example.presaber.data.remote.Reto
+import com.example.presaber.data.remote.RetrofitClient
+import com.example.presaber.data.remote.ResultadoData
+import com.example.presaber.ui.home.components.Quiz
+import com.example.presaber.ui.home.components.RetoList
+import com.example.presaber.ui.home.components.ResultQuiz
 import com.example.presaber.ui.layout.StudentLayout
-import com.example.presaber.ui.theme.PresaberTheme
 
 @Composable
-fun HomeEstudiante(
-    onNavigateToSubject: (SubjectArea) -> Unit = {}
-) {
+fun HomeEstudiante() {
     var selectedNavItem by remember { mutableStateOf(0) }
     val showAccountDialog = remember { mutableStateOf(false) }
 
-    StudentLayout(
-        selectedNavItem = selectedNavItem,
-        onNavItemSelected = { index ->
-            selectedNavItem = index
-            // Aquí puedes manejar la navegación a otras pantallas
-            when (index) {
-                0 -> { /* Ya estamos en Home */ }
-                1 -> { /* Navegar a AI */ }
-                2 -> { /* Navegar a PVP */ }
-                3 -> { /* Navegar a Groups */ }
-                4 -> { /* Navegar a Profile */ }
+    var selectedArea by remember { mutableStateOf<SubjectArea?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    var retos by remember { mutableStateOf<List<Reto>>(emptyList()) }
+
+    var currentReto by remember { mutableStateOf<Reto?>(null) }
+    var resultadoFinal by remember { mutableStateOf<ResultadoData?>(null) }
+
+    // Cargar retos cuando cambia el área
+    LaunchedEffect(selectedArea) {
+        if (selectedArea != null) {
+            isLoading = true
+            try {
+                val response = RetrofitClient.api.getRetosPorArea(selectedArea!!.id)
+                if (response.success) {
+                    retos = response.data
+                } else {
+                    retos = emptyList()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                retos = emptyList()
+            } finally {
+                isLoading = false
             }
-        },
-        showAccountDialog = showAccountDialog
-    ) { paddingValues ->
-        // El contenido del home con el padding del Scaffold
-        androidx.compose.foundation.layout.Box(
-            modifier = androidx.compose.ui.Modifier.padding(paddingValues)
-        ) {
-            HomeContent(
-                onSubjectClick = { subject ->
-                    onNavigateToSubject(subject)
+        }
+    }
+
+    // ⬇️ IMPORTANTE: Quiz y Resultado en PANTALLA COMPLETA (sin StudentLayout)
+    when {
+        // Mostrar resultado en pantalla completa
+        resultadoFinal != null -> {
+            ResultQuiz(
+                resultado = resultadoFinal!!,
+                onAccept = {
+                    resultadoFinal = null
+                    currentReto = null
+                    selectedArea = null
                 }
             )
         }
-    }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewHomeScreen() {
-    PresaberTheme {
-        HomeEstudiante()
+        // Mostrar quiz en pantalla completa
+        currentReto != null -> {
+            Quiz(
+                reto = currentReto!!,
+                idEstudiante = "1092396994",
+                onFinish = { resultado ->
+                    resultadoFinal = resultado
+                },
+                onExit = {
+                    currentReto = null
+                }
+            )
+        }
+
+        // Mostrar home normal con layout
+        else -> {
+            StudentLayout(
+                selectedNavItem = selectedNavItem,
+                onNavItemSelected = { index -> selectedNavItem = index },
+                showAccountDialog = showAccountDialog
+            ) { paddingValues ->
+                Box(modifier = Modifier.padding(paddingValues)) {
+                    if (selectedArea != null) {
+                        RetoList(
+                            area = selectedArea!!,
+                            retos = retos,
+                            isLoading = isLoading,
+                            onBackClick = { selectedArea = null },
+                            onStartReto = { reto ->
+                                currentReto = reto
+                            }
+                        )
+                    } else {
+                        HomeContent(
+                            onSubjectClick = { area -> selectedArea = area }
+                        )
+                    }
+                }
+            }
+        }
     }
 }

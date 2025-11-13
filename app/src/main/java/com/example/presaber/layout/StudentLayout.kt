@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -34,7 +35,9 @@ fun StudentLayout(
     showAccountDialog: MutableState<Boolean> = remember { mutableStateOf(false) },
     content: @Composable (PaddingValues) -> Unit
 ) {
-    val currentUser = FirebaseAuth.getInstance().currentUser
+    val isInPreview = LocalInspectionMode.current
+    val firebaseAuth = if (!isInPreview) FirebaseAuth.getInstance() else null
+    val currentUser = firebaseAuth?.currentUser
 
     Scaffold(
         topBar = {
@@ -101,55 +104,35 @@ fun StudentLayout(
             ) {
                 NavigationBarItem(
                     icon = {
-                        Icon(
-                            Icons.Default.Home,
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Icon(Icons.Default.Home, null, modifier = Modifier.size(20.dp))
                     },
                     selected = selectedNavItem == 0,
                     onClick = { onNavItemSelected(0) }
                 )
                 NavigationBarItem(
                     icon = {
-                        Icon(
-                            painterResource(R.drawable.icon_ai),
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Icon(painterResource(R.drawable.icon_ai), null, modifier = Modifier.size(20.dp))
                     },
                     selected = selectedNavItem == 1,
                     onClick = { onNavItemSelected(1) }
                 )
                 NavigationBarItem(
                     icon = {
-                        Icon(
-                            painterResource(R.drawable.icon_pvp),
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Icon(painterResource(R.drawable.icon_pvp), null, modifier = Modifier.size(20.dp))
                     },
                     selected = selectedNavItem == 2,
                     onClick = { onNavItemSelected(2) }
                 )
                 NavigationBarItem(
                     icon = {
-                        Icon(
-                            Icons.Default.Group,
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Icon(Icons.Default.Group, null, modifier = Modifier.size(20.dp))
                     },
                     selected = selectedNavItem == 3,
                     onClick = { onNavItemSelected(3) }
                 )
                 NavigationBarItem(
                     icon = {
-                        Icon(
-                            Icons.Default.Person,
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Icon(Icons.Default.Person, null, modifier = Modifier.size(20.dp))
                     },
                     selected = selectedNavItem == 4,
                     onClick = { onNavItemSelected(4) }
@@ -162,14 +145,16 @@ fun StudentLayout(
     // Account Management Dialog
     if (showAccountDialog.value) {
         AccountDialog(
-            onDismiss = { showAccountDialog.value = false }
+            onDismiss = { showAccountDialog.value = false },
+            isInPreview = isInPreview // ✅ Pásalo aquí
         )
     }
 }
 
 @Composable
-fun AccountDialog(onDismiss: () -> Unit) {
-    val currentUser = FirebaseAuth.getInstance().currentUser
+fun AccountDialog(onDismiss: () -> Unit, isInPreview: Boolean = false) {
+    val firebaseAuth = if (!isInPreview) FirebaseAuth.getInstance() else null
+    val currentUser = firebaseAuth?.currentUser
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -202,7 +187,6 @@ fun AccountDialog(onDismiss: () -> Unit) {
                     .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Imagen de perfil
                 if (currentUser?.photoUrl != null) {
                     AsyncImage(
                         model = currentUser.photoUrl,
@@ -223,7 +207,6 @@ fun AccountDialog(onDismiss: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Nombre
                 Text(
                     text = currentUser?.displayName ?: "Saimer Saavedra",
                     fontSize = 20.sp,
@@ -232,7 +215,6 @@ fun AccountDialog(onDismiss: () -> Unit) {
                     textAlign = TextAlign.Center
                 )
 
-                // Correo
                 Text(
                     text = currentUser?.email ?: "saimer@example.com",
                     color = Color.Gray,
@@ -241,13 +223,9 @@ fun AccountDialog(onDismiss: () -> Unit) {
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
-
-
                 Divider(color = Color(0xFFB0C4DE), thickness = 1.dp)
-
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Opciones
                 Column(modifier = Modifier.fillMaxWidth()) {
                     AccountOption(
                         icon = R.drawable.icon_config,
@@ -258,20 +236,16 @@ fun AccountDialog(onDismiss: () -> Unit) {
                         icon = R.drawable.icon_logout,
                         text = "Cerrar sesión",
                         onClick = {
-                            FirebaseAuth.getInstance().signOut()
+                            firebaseAuth?.signOut()
                             onDismiss()
                         }
                     )
-
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Divider(color = Color(0xFFB0C4DE), thickness = 1.dp)
-
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Política y términos
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
