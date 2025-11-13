@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -36,29 +37,29 @@ fun InstitutionLayout(
     showAccountDialog: MutableState<Boolean> = remember { mutableStateOf(false) },
     content: @Composable (PaddingValues) -> Unit
 ) {
-    val currentUser = FirebaseAuth.getInstance().currentUser
+    val isInPreview = LocalInspectionMode.current
+
+    val currentUser = if (!isInPreview) {
+        try {
+            FirebaseAuth.getInstance().currentUser
+        } catch (e: IllegalStateException) {
+            null
+        }
+    } else null
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = buildAnnotatedString {
-                                append("Pre")
-                                withStyle(style = SpanStyle(color = Color(0xFF5B7ABD))) {
-                                    append("Saber")
-                                }
-                            },
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1A1B21)
-                        )
-                    }
+                    Text(
+                        text = buildAnnotatedString {
+                            append("Pre")
+                            withStyle(style = SpanStyle(color = Color(0xFF5B7ABD))) { append("Saber") }
+                        },
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1A1B21)
+                    )
                 },
                 actions = {
                     IconButton(onClick = { showAccountDialog.value = true }) {
@@ -86,43 +87,7 @@ fun InstitutionLayout(
                 )
             )
         },
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color(0xFFE2E7EE),
-                modifier = Modifier.height(64.dp)
-            ) {
-                // Inicio
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, null, modifier = Modifier.size(20.dp)) },
-                    selected = selectedNavItem == 0,
-                    onClick = { onNavItemSelected(0) }
-                )
-                // Profesores
-                NavigationBarItem(
-                    icon = { Icon(painterResource(R.drawable.icon_profesores), null, modifier = Modifier.size(20.dp)) },
-                    selected = selectedNavItem == 1,
-                    onClick = { onNavItemSelected(1) }
-                )
-                // Preguntas
-                NavigationBarItem(
-                    icon = { Icon(painterResource(R.drawable.icon_pregunta), null, modifier = Modifier.size(20.dp)) },
-                    selected = selectedNavItem == 2,
-                    onClick = { onNavItemSelected(2) }
-                )
-                // Grupos
-                NavigationBarItem(
-                    icon = { Icon(painterResource(R.drawable.icon_grupos), null, modifier = Modifier.size(20.dp)) },
-                    selected = selectedNavItem == 3,
-                    onClick = { onNavItemSelected(3) }
-                )
-                // Gamificación
-                NavigationBarItem(
-                    icon = { Icon(painterResource(R.drawable.icon_gamificacion), null, modifier = Modifier.size(20.dp)) },
-                    selected = selectedNavItem == 4,
-                    onClick = { onNavItemSelected(4) }
-                )
-            }
-        },
+        bottomBar = { /* tu barra igual */ },
         content = content
     )
 

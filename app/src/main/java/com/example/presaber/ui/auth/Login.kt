@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.presaber.R
 import com.example.presaber.ui.auth.components.LoginForm
@@ -113,5 +114,16 @@ fun Login(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun LoginPreview() {
+    PresaberTheme {
+        Login(
+            onLoginClick = { _, _ -> },
+            loginError = null
+        )
     }
 }

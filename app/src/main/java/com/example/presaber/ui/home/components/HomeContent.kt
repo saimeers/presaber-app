@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.example.presaber.R
 
 data class SubjectArea(
+    val id: Int,
     val title: String,
     val description: String,
     val imageRes: Int,
@@ -37,30 +38,35 @@ fun HomeContent(
 
     val subjects = listOf(
         SubjectArea(
+            2,
             "Matemáticas",
             "Desarrolla tu razonamiento lógico y habilidades matemáticas",
             R.drawable.img_matematicas,
             Color(0xFF5B7ABD)
         ),
         SubjectArea(
+            1,
             "Lectura Crítica",
             "Mejora tu comprensión lectora y análisis de textos",
             R.drawable.img_lectura,
             Color(0xFFE8B959)
         ),
         SubjectArea(
+            3,
             "Ciencias Naturales",
             "Explora el mundo natural y sus fenómenos",
             R.drawable.img_ciencias,
             Color(0xFF7AB88E)
         ),
         SubjectArea(
+            5,
             "Inglés",
             "Fortalece tus habilidades comunicativas en inglés",
             R.drawable.img_ingles,
             Color(0xFFE87C7C)
         ),
         SubjectArea(
+            4,
             "Sociales y Ciudadanas",
             "Comprende la sociedad y tu rol como ciudadano",
             R.drawable.img_sociales,

@@ -1,6 +1,11 @@
 package com.example.presaber.utils
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 object ValidationUtils {
@@ -36,9 +41,13 @@ object ValidationUtils {
         )
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun convertMillisToDate(millis: Long): String {
-        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        return formatter.format(java.util.Date(millis))
+        val localDate = Instant.ofEpochMilli(millis)
+            .atZone(ZoneId.of("UTC"))
+            .toLocalDate()
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        return localDate.format(formatter)
     }
 }
 
