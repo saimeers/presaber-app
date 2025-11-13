@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -19,6 +20,8 @@ fun Buttons() {
     var nivelExpanded by remember { mutableStateOf(false) }
     var areaExpanded by remember { mutableStateOf(false) }
 
+    var selectedButton by remember { mutableStateOf<String?>(null) }
+
     // 🔽 Tema - autocompletado y agregar
     var temaText by remember { mutableStateOf("") }
     var temaExpanded by remember { mutableStateOf(false) }
@@ -26,6 +29,12 @@ fun Buttons() {
     val temasDisponibles = remember {
         mutableStateListOf("Genética", "Ecosistemas", "Energía", "Materia", "Célula")
     }
+
+    // Colores personalizados
+    val colorInactivo = Color(0xFFD2DEFF)
+    val colorActivo = Color(0xFF5B7BC6)
+    val textoInactivo = Color(0xFF3D5A8F)
+    val textoActivo = Color.White
 
     Column(
         modifier = Modifier
@@ -41,7 +50,16 @@ fun Buttons() {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             // 📷 Botón de imagen
-            ElevatedButton(onClick = { /* TODO: Acción subir imagen */ }) {
+            Button(
+                onClick = {
+                    selectedButton = "imagen"
+                    /* TODO: Acción subir imagen */
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (selectedButton == "imagen") colorActivo else colorInactivo,
+                    contentColor = if (selectedButton == "imagen") textoActivo else textoInactivo
+                )
+            ) {
                 Icon(Icons.Default.CameraAlt, contentDescription = "Subir imagen")
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Imagen")
@@ -49,7 +67,16 @@ fun Buttons() {
 
             // ⬇️ SplitButton: Nivel
             Box {
-                FilledTonalButton(onClick = { nivelExpanded = true }) {
+                Button(
+                    onClick = {
+                        selectedButton = "nivel"
+                        nivelExpanded = true
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selectedButton == "nivel") colorActivo else colorInactivo,
+                        contentColor = if (selectedButton == "nivel") textoActivo else textoInactivo
+                    )
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Nivel")
                         Icon(
@@ -71,7 +98,16 @@ fun Buttons() {
 
             // ⬇️ SplitButton: Área
             Box {
-                FilledTonalButton(onClick = { areaExpanded = true }) {
+                Button(
+                    onClick = {
+                        selectedButton = "area"
+                        areaExpanded = true
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selectedButton == "area") colorActivo else colorInactivo,
+                        contentColor = if (selectedButton == "area") textoActivo else textoInactivo
+                    )
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Área")
                         Icon(
@@ -112,7 +148,12 @@ fun Buttons() {
                         IconButton(onClick = { temaExpanded = !temaExpanded }) {
                             Icon(Icons.Default.ArrowDropDown, contentDescription = "Mostrar temas")
                         }
-                    }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colorActivo,
+                        focusedLabelColor = colorActivo,
+                        cursorColor = colorActivo
+                    )
                 )
 
                 DropdownMenu(
@@ -148,9 +189,16 @@ fun Buttons() {
                 }
             }
 
-            // ➕ Botón redondo justo al lado del selector
-            FilledTonalIconButton(
-                onClick = { showTemaInput = !showTemaInput },
+            // + Botón redondo justo al lado del selector
+            IconButton(
+                onClick = {
+                    selectedButton = "add"
+                    showTemaInput = !showTemaInput
+                },
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = if (selectedButton == "add") colorActivo else colorInactivo,
+                    contentColor = if (selectedButton == "add") textoActivo else textoInactivo
+                ),
                 modifier = Modifier
                     .padding(start = 8.dp)
                     .size(48.dp)
@@ -159,7 +207,7 @@ fun Buttons() {
             }
         }
 
-        // 📝 Campo para ingresar nuevo tema (solo si se presiona ➕)
+        // Campo para ingresar nuevo tema (solo si se presiona +)
         if (showTemaInput) {
             Row(
                 modifier = Modifier
@@ -171,16 +219,26 @@ fun Buttons() {
                     value = temaText,
                     onValueChange = { temaText = it },
                     label = { Text("Nuevo tema") },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colorActivo,
+                        focusedLabelColor = colorActivo,
+                        cursorColor = colorActivo
+                    )
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    if (temaText.isNotBlank()) {
-                        temasDisponibles.add(temaText)
-                        showTemaInput = false
-                        temaText = ""
-                    }
-                }) {
+                Button(
+                    onClick = {
+                        if (temaText.isNotBlank()) {
+                            temasDisponibles.add(temaText)
+                            showTemaInput = false
+                            temaText = ""
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colorActivo
+                    )
+                ) {
                     Text("Guardar")
                 }
             }

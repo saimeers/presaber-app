@@ -5,16 +5,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.NavController
 import com.example.presaber.layout.InstitutionLayout
 import com.example.presaber.ui.institution.components.HomeQuestionContent
 import com.example.presaber.ui.institution.components.SubjectArea
 import com.example.presaber.ui.theme.PresaberTheme
-import androidx.navigation.compose.rememberNavController
 
 @Composable
 fun HomeQuestion(
-    navController: NavController,
     onNavigateToSubject: (SubjectArea) -> Unit = {}
 ) {
     var selectedNavItem by remember { mutableStateOf(2) } // Por ejemplo, 2 si este es el ítem de Preguntas
@@ -37,7 +34,6 @@ fun HomeQuestion(
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             HomeQuestionContent(
-                navController = navController,
                 onSubjectClick = { subject ->
                     onNavigateToSubject(subject)
                 }
@@ -50,7 +46,6 @@ fun HomeQuestion(
 @Composable
 fun PreviewHomeQuestion() {
     PresaberTheme {
-        val navController = rememberNavController()
-        HomeQuestion(navController = navController)
+        HomeQuestion()
     }
 }

@@ -1,5 +1,7 @@
 package com.example.presaber.data.remote
 
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.http.*
 
 data class Institucion(val id_institucion: Int, val nombre: String)
@@ -81,13 +83,30 @@ interface PresaberApi {
     @POST("api/usuarios/")
     suspend fun registrarUsuario(@Body body: RegistroRequest)
 
-    // 🔹 Áreas
+    // Áreas
     @GET("api/areas")
     suspend fun getAreas(): List<Area>
 
-    // 🔹 Preguntas por área
+    // Preguntas por área
     @GET("api/preguntas/area/{id_area}")
     suspend fun getPreguntasPorArea(@Path("id_area") idArea: Int): List<Pregunta>
+
+    // Temas por área
+    @GET("api/temas/area/{id_area}")
+    suspend fun getTemasPorArea(@Path("id_area") idArea: Int): List<Tema>
+
+    // Crear pregunta con imagen (Multipart)
+    @Multipart
+    @POST("api/preguntas/crear")
+    suspend fun crearPregunta(
+        @Part("enunciado") enunciado: RequestBody,
+        @Part("nivel_dificultad") nivelDificultad: RequestBody,
+        @Part("id_area") idArea: RequestBody,
+        @Part("id_tema") idTema: RequestBody?,
+        @Part("opciones") opciones: RequestBody,
+        @Part("respuesta_correcta") respuestaCorrecta: RequestBody,
+        @Part file: MultipartBody.Part? = null
+    ): Pregunta
 }
 
 

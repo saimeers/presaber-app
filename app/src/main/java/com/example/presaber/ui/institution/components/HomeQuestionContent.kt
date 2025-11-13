@@ -19,8 +19,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presaber.R
 import com.example.presaber.ui.theme.PresaberTheme
-import androidx.navigation.NavController
 import com.example.presaber.ui.components.AddCard
+import androidx.compose.runtime.compositionLocalOf
+import androidx.navigation.NavController
+import androidx.compose.runtime.CompositionLocalProvider
+
+val LocalNavController = compositionLocalOf<NavController> {
+    error("NavController not provided")
+}
 
 data class SubjectArea(
     val title: String,
@@ -31,9 +37,9 @@ data class SubjectArea(
 
 @Composable
 fun HomeQuestionContent(
-    navController: NavController,
     onSubjectClick: (SubjectArea) -> Unit = {}
 ) {
+    val navController = LocalNavController.current
     var showFabMenu by remember { mutableStateOf(false) }
 
     val subjects = listOf(
@@ -90,7 +96,7 @@ fun HomeQuestionContent(
             item {
                 AddCard(
                     text = "Agregar preguntas",
-                    onClick = { navController.navigate("crearPregunta") }
+                    onClick = { navController.navigate("CreateQuestionScreen") }
                 )
             }
 
@@ -178,6 +184,6 @@ fun SubjectCard(
 fun HomeQuestionContentPreview(){
     PresaberTheme{
         val navController = androidx.navigation.compose.rememberNavController()
-        HomeQuestionContent(navController = navController)
+        HomeQuestionContent()
     }
 }

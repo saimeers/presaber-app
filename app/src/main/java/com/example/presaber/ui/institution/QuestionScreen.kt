@@ -5,13 +5,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.presaber.R
 import com.example.presaber.data.remote.Pregunta
 import com.example.presaber.ui.institution.components.*
 import com.example.presaber.ui.theme.PresaberTheme
 import com.example.presaber.layout.InstitutionLayout
+import com.example.presaber.ui.institution.viewmodel.QuestionsViewModel
 
 @Composable
 fun QuestionsScreen(

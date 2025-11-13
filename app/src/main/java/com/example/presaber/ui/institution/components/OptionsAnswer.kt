@@ -1,7 +1,11 @@
 package com.example.presaber.ui.institution.components
+
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
@@ -11,65 +15,114 @@ import com.example.presaber.ui.theme.PresaberTheme
 @Composable
 fun OptionsAnswer(
     opciones: MutableList<String>,
-    onChange: (Int, String) -> Unit,
+    imagenes: MutableList<String?>,
     opcionSeleccionada: Int?,
-    onSelect: (Int) -> Unit
+    onSelect: (Int) -> Unit,
+    onChange: (Int, String) -> Unit,
+    onUploadImage: (Int) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
         opciones.forEachIndexed { index, texto ->
             ElevatedCard(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = if (opcionSeleccionada == index)
+                        Color(0xFFCFDCFF).copy(alpha = 0.15f)
+                    else
+                        Color.White
+                ),
                 onClick = { onSelect(index) }
             ) {
                 Row(
                     modifier = Modifier
-                        .padding(12.dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // 🔘 Radio de selección
                     RadioButton(
                         selected = opcionSeleccionada == index,
-                        onClick = { onSelect(index) }
+                        onClick = { onSelect(index) },
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = Color(0xFF5B7BC6)
+                        )
                     )
+
                     Spacer(modifier = Modifier.width(8.dp))
+
+                    // ✏️ Campo de texto editable
                     TextField(
                         value = texto,
                         onValueChange = { onChange(index, it) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors= TextFieldDefaults.colors(
-                            // Hacemos que la línea inferior (indicador) sea transparente en todos los estados
-                            focusedIndicatorColor = Color.Transparent,    // cuando el campo de texto está enfocado
-                            unfocusedIndicatorColor = Color.Transparent,  // cuando no está enfocado
-                            disabledIndicatorColor = Color.Transparent,   // cuando está deshabilitado
-                            errorIndicatorColor = Color.Transparent,      // cuando hay un error
-
-                            // Opcional: Si también quieres quitar el color de fondo
+                        label = { Text("Opción ${index + 1}") },
+                        modifier = Modifier.weight(1f),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                            errorIndicatorColor = Color.Transparent,
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
                             disabledContainerColor = Color.Transparent,
                             errorContainerColor = Color.Transparent
+                        ),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // 🖼️ Botón de imagen
+                    IconButton(
+                        onClick = { onUploadImage(index) },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = if (imagenes[index] != null)
+                                Color(0xFF5B7BC6)
+                            else
+                                Color(0xFFD2DEFF),
+                            contentColor = if (imagenes[index] != null)
+                                Color.White
+                            else
+                                Color(0xFF3D5A8F)
+                        ),
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Image,
+                            contentDescription = "Agregar imagen"
                         )
-                        )
+                    }
                 }
             }
         }
     }
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
+fun OptionsAnswerPreview() {
+    val opciones = remember { mutableStateListOf("Opción 1", "Opción 2", "Opción 3", "Opción 4") }
+    val imagenes = remember { mutableStateListOf<String?>(null, null, null, null) }
+    var seleccionada by remember { mutableStateOf<Int?>(null) }
 
-fun OptionsAnswerPreview(){
-    PresaberTheme{
-        var opciones = remember { mutableStateListOf("Opción 1", "Opción 2", "Opción 3", "Opción 4") }
-        var opcionSeleccionada by remember { mutableStateOf<Int?>(null) }
-
-        OptionsAnswer(
-            opciones = opciones,
-            onChange = { index, valor -> opciones[index] = valor },
-            opcionSeleccionada = opcionSeleccionada,
-            onSelect = { opcionSeleccionada = it }
-        )
+    PresaberTheme {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            OptionsAnswer(
+                opciones = opciones,
+                imagenes = imagenes,
+                opcionSeleccionada = seleccionada,
+                onSelect = { seleccionada = it },
+                onChange = { index, valor -> opciones[index] = valor },
+                onUploadImage = { index ->
+                    println("Subir imagen para opción $index")
+                }
+            )
+        }
     }
 }
