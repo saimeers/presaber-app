@@ -41,6 +41,27 @@ data class RegistroRequest(
 )
 data class VerificacionResponse(val valido: Boolean)
 
+data class Area(
+    val id_area: Int,
+    val nombre: String
+)
+
+data class Tema(
+    val id_tema: Int?,
+    val descripcion: String?
+)
+
+data class Pregunta(
+    val id_pregunta: Int,
+    val enunciado: String?,
+    val nivel_dificultad: String?,
+    val imagen: String?,
+    val id_area: Int,
+    val id_tema: Int?,
+    val area: Area?,
+    val tema: Tema?
+)
+
 interface PresaberApi {
     @GET("api/institucion")
     suspend fun getInstituciones(): List<Institucion>
@@ -59,6 +80,14 @@ interface PresaberApi {
 
     @POST("api/usuarios/")
     suspend fun registrarUsuario(@Body body: RegistroRequest)
+
+    // 🔹 Áreas
+    @GET("api/areas")
+    suspend fun getAreas(): List<Area>
+
+    // 🔹 Preguntas por área
+    @GET("api/preguntas/area/{id_area}")
+    suspend fun getPreguntasPorArea(@Path("id_area") idArea: Int): List<Pregunta>
 }
 
 
