@@ -21,9 +21,6 @@ import coil.compose.AsyncImage
 import com.example.presaber.R
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.ui.draw.scale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,50 +88,85 @@ fun AdminLayout(
             )
         },
         bottomBar = {
+
+            val indicatorColor = Color(0xFF5B7ABD) // azul seleccionado
+            val unselectedIconColor = Color(0xFF3A3843)
+            val selectedIconColor = Color.White
+
             NavigationBar(
-                containerColor = Color(0xFFE2E7EE),
+                containerColor = Color(0xFFE6EAF3),
                 tonalElevation = 0.dp,
-                modifier = Modifier.height(64.dp)
+                modifier = Modifier.height(96.dp)  // barra grande
             ) {
-                val items = listOf(
-                    Triple(R.drawable.icon_home, "Inicio", 0),
-                    Triple(R.drawable.icon_institution, "Instituciones", 1),
-                    Triple(R.drawable.icon_user_settings, "Configuración", 2)
+
+                // ---------- HOME ----------
+                NavigationBarItem(
+                    selected = selectedNavItem == 0,
+                    onClick = { onNavItemSelected(0) },
+                    icon = {
+                        Box(
+                            modifier = Modifier.fillMaxHeight(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.icon_home),
+                                contentDescription = "Inicio",
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = selectedIconColor,
+                        unselectedIconColor = unselectedIconColor,
+                        indicatorColor = indicatorColor
+                    )
                 )
 
-                items.forEach { (icon, description, index) ->
-                    val isSelected = selectedNavItem == index
-
-                    // Animaciones de color y escala
-                    val animatedColor by animateColorAsState(
-                        targetValue = if (isSelected) Color(0xFF1A1B21) else Color(0xFF5C5F66),
-                        label = "iconColor"
-                    )
-                    val animatedScale by animateFloatAsState(
-                        targetValue = if (isSelected) 1.2f else 1f,
-                        label = "iconScale"
-                    )
-
-                    NavigationBarItem(
-                        icon = {
+                // ---------- INSTITUTIONS ----------
+                NavigationBarItem(
+                    selected = selectedNavItem == 1,
+                    onClick = { onNavItemSelected(1) },
+                    icon = {
+                        Box(
+                            modifier = Modifier.fillMaxHeight(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
-                                painter = painterResource(id = icon),
-                                contentDescription = description,
-                                tint = animatedColor,
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .scale(animatedScale)
+                                painter = painterResource(id = R.drawable.icon_institution),
+                                contentDescription = "Instituciones",
+                                modifier = Modifier.size(38.dp)   // icono central más grande
                             )
-                        },
-                        selected = isSelected,
-                        onClick = { onNavItemSelected(index) },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Transparent,
-                            selectedIconColor = Color(0xFF1A1B21),
-                            unselectedIconColor = Color(0xFF5C5F66)
-                        )
+                        }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = selectedIconColor,
+                        unselectedIconColor = unselectedIconColor,
+                        indicatorColor = indicatorColor
                     )
-                }
+                )
+
+                // ---------- USER ----------
+                NavigationBarItem(
+                    selected = selectedNavItem == 2,
+                    onClick = { onNavItemSelected(2) },
+                    icon = {
+                        Box(
+                            modifier = Modifier.fillMaxHeight(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.icon_user_settings),
+                                contentDescription = "Usuario",
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = selectedIconColor,
+                        unselectedIconColor = unselectedIconColor,
+                        indicatorColor = indicatorColor
+                    )
+                )
             }
         }
         ,
