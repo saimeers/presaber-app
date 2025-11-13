@@ -68,11 +68,6 @@ data class Area(
     val nombre: String
 )
 
-data class Tema(
-    val id_tema: Int?,
-    val descripcion: String?
-)
-
 data class Pregunta(
     val id_pregunta: Int,
     val enunciado: String?,
