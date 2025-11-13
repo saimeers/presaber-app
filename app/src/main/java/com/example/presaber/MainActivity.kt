@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.example.presaber.navigation.MainNavigation
 import com.example.presaber.ui.theme.PresaberTheme
+import com.example.presaber.ui.institution.InstitutionNavHost
 
 class MainActivity : ComponentActivity() {
 
@@ -13,6 +14,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             PresaberTheme {
                 MainNavigation()
+                InstitutionNavHost()
             }
         }
     }
