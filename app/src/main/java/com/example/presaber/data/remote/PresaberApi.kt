@@ -218,6 +218,57 @@ data class TeacherResponse(
     }
 }
 
+data class CursoResponse(
+    val grado: String,
+    val grupo: String,
+    val cohorte: Int,
+    val clave_acceso: String,
+    val habilitado: Boolean,
+    val cantidad_estudiantes: Int? = 0,
+    val docente: DocenteInfo? = null,
+    val institucion: InstitucionInfo? = null
+)
+
+data class DocenteInfo(
+    val documento: String,
+    val nombre: String,
+    val apellido: String,
+    val nombre_completo: String,
+    val correo: String
+)
+
+data class InstitucionInfo(
+    val id_institucion: Int,
+    val nombre: String
+)
+
+data class CrearCursoRequest(
+    val grado: String,
+    val grupo: String,
+    val cohorte: Int,
+    val clave_acceso: String,
+    val id_institucion: Int,
+    val id_docente: Int? = null
+)
+
+data class CrearCursoResponse(
+    val mensaje: String,
+    val data: CursoData
+)
+
+data class CursoData(
+    val curso: CursoResponse,
+    val docente: Any? = null
+)
+
+data class ActualizarEstadoRequest(
+    val grado: String,
+    val grupo: String,
+    val cohorte: Int,
+    val id_institucion: Int,
+    val habilitado: Boolean
+)
+
 
 interface PresaberApi {
     @GET("api/institucion")
@@ -335,4 +386,22 @@ interface PresaberApi {
     suspend fun getDocentes(@Path("id_institucion") idInstitucion: Int): List<TeacherResponse>
 
 
+    //Cursos
+
+    @GET("api/curso/institucion/{id_institucion}")
+    suspend fun getCursosPorInstitucion(
+        @Path("id_institucion") idInstitucion: Int
+    ): List<CursoResponse>
+
+    // Crear nuevo curso
+    @POST("api/curso/crear")
+    suspend fun crearCurso(
+        @Body request: CrearCursoRequest
+    ): CrearCursoResponse
+
+
+    @PUT("api/curso/actualizar-estado")
+    suspend fun actualizarEstadoCurso(
+        @Body request: ActualizarEstadoRequest
+    ): CursoResponse
 }

@@ -16,6 +16,7 @@ import androidx.navigation.navArgument
 import com.example.presaber.layout.InstitutionLayout
 import com.example.presaber.ui.institution.components.questions.SubjectArea
 import com.example.presaber.ui.institution.components.questions.LocalNavController
+import com.example.presaber.ui.institution.screens.CoursesScreen
 import com.example.presaber.ui.institution.screens.CreateQuestionScreen
 import com.example.presaber.ui.institution.screens.EditQuestionScreenWrapper
 import com.example.presaber.ui.institution.screens.HomeQuestion
@@ -36,7 +37,7 @@ fun InstitutionNavHost(idInstitucion: Int ) {
                     0 -> navController.navigate("homeQuestion") { launchSingleTop = true }
                     1 -> navController.navigate("teachers/$idInstitucion") { launchSingleTop = true }
                     2 -> navController.navigate("HomeQuestion") { launchSingleTop = true }
-                    3 -> navController.navigate("GroupsScreen") { launchSingleTop = true }
+                    3 -> navController.navigate("CoursesScreen/$idInstitucion") { launchSingleTop = true }
                     4 -> navController.navigate("GamificationScreen") { launchSingleTop = true }
                 }
             },
@@ -62,7 +63,17 @@ fun InstitutionNavHost(idInstitucion: Int ) {
                         TeachersScreen(idInstitucion = idInst)
                     }
 
-                    composable("GroupsScreen") { /* pantalla de grupos */ }
+                    composable(
+                        route = "CoursesScreen/{idInstitucion}",
+                        arguments = listOf(
+                            navArgument("idInstitucion") {
+                                type = NavType.IntType
+                            }
+                        )
+                    ) { backStackEntry ->
+                        val idInstitucion = backStackEntry.arguments?.getInt("idInstitucion") ?: 1
+                        CoursesScreen(idInstitucion = idInstitucion)
+                    }
 
                     composable("GamificationScreen") { /* pantalla de gamificación */ }
 
