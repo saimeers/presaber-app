@@ -1,5 +1,6 @@
-package com.example.presaber.ui.institution
+package com.example.presaber.ui.institution.screens
 
+import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,10 +35,11 @@ import com.example.presaber.data.remote.Area
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
+import java.util.UUID
 
 // --- UI model que mantiene el estado por cada pregunta en la UI ---
 data class PreguntaUI(
-    val id: String = java.util.UUID.randomUUID().toString(),
+    val id: String = UUID.randomUUID().toString(),
     var enunciado: TextFieldValue = TextFieldValue(""),
     val opciones: MutableList<String> = mutableStateListOf("", "", "", ""),
     val imagenesOpciones: MutableList<File?> = mutableStateListOf(null, null, null, null),
@@ -133,236 +135,238 @@ fun CreateQuestionScreen(
         return Pair(true, null)
     }
 
-    InstitutionLayout(selectedNavItem = 2, onNavItemSelected = {}, showAccountDialog = remember { mutableStateOf(false) }) { paddingValues ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues)) {
+    Box(modifier = Modifier
+        .fillMaxSize()) {
 
-            Column(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 20.dp, vertical = 15.dp),
+            verticalArrangement = Arrangement.Top
+        ) {
+            Text(
+                text = "Crear Pregunta(s)",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF485E92),
+                textAlign = TextAlign.Center,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = 20.dp, vertical = 15.dp),
-                verticalArrangement = Arrangement.Top
-            ) {
-                Text(
-                    text = "Crear Pregunta(s)",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF485E92),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp, top = 8.dp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp, top = 8.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
 
-                preguntas.forEachIndexed { qIndex, preguntaUI ->
-                    key(preguntaUI.id) {
-                        PreguntaItem(
-                            index = qIndex,
-                            pregunta = preguntaUI,
-                            areas = areas,
-                            refreshTrigger = refreshTrigger,
-                            onUpdateEnunciado = { newValue ->
-                                preguntas[qIndex] = preguntas[qIndex].copy(enunciado = newValue)
-                            },
-                            onAddOption = {
-                                preguntaUI.opciones.add("")
-                                preguntaUI.imagenesOpciones.add(null)
-                                scope.launch { scrollState.animateScrollTo(scrollState.maxValue) }
-                            },
-                            onDeleteOption = { optIndex ->
-                                if (preguntaUI.opciones.size > 2) {
-                                    preguntaUI.opciones.removeAt(optIndex)
-                                    preguntaUI.imagenesOpciones.removeAt(optIndex)
-                                    if (preguntaUI.opcionCorrecta != null) {
-                                        if (preguntaUI.opcionCorrecta == optIndex) preguntaUI.opcionCorrecta = null
-                                        else if (preguntaUI.opcionCorrecta!! > optIndex) preguntaUI.opcionCorrecta = preguntaUI.opcionCorrecta!! - 1
-                                    }
-                                    refreshTrigger++
-                                } else {
-                                    scope.launch { snackbarHostState.showSnackbar("Debe quedar al menos 2 opciones") }
+            preguntas.forEachIndexed { qIndex, preguntaUI ->
+                key(preguntaUI.id) {
+                    PreguntaItem(
+                        index = qIndex,
+                        pregunta = preguntaUI,
+                        areas = areas,
+                        refreshTrigger = refreshTrigger,
+                        onUpdateEnunciado = { newValue ->
+                            preguntas[qIndex] = preguntas[qIndex].copy(enunciado = newValue)
+                        },
+                        onAddOption = {
+                            preguntaUI.opciones.add("")
+                            preguntaUI.imagenesOpciones.add(null)
+                            scope.launch { scrollState.animateScrollTo(scrollState.maxValue) }
+                        },
+                        onDeleteOption = { optIndex ->
+                            if (preguntaUI.opciones.size > 2) {
+                                preguntaUI.opciones.removeAt(optIndex)
+                                preguntaUI.imagenesOpciones.removeAt(optIndex)
+                                if (preguntaUI.opcionCorrecta != null) {
+                                    if (preguntaUI.opcionCorrecta == optIndex) preguntaUI.opcionCorrecta = null
+                                    else if (preguntaUI.opcionCorrecta!! > optIndex) preguntaUI.opcionCorrecta = preguntaUI.opcionCorrecta!! - 1
                                 }
-                            },
-                            onPickQuestionImage = {
-                                lastQuestionIdForQuestionImage = preguntaUI.id
-                                pickQuestionImageLauncher.launch("image/*")
-                            },
-                            onPickOptionImage = { optIndex ->
-                                lastQuestionIdForOptionImage = preguntaUI.id
-                                lastOptionIndexForImage = optIndex
-                                pickOptionImageLauncher.launch("image/*")
-                            },
-                            onSelectArea = { areaId ->
-                                preguntaUI.areaId = areaId
-                                preguntaUI.temaId = null
-                                preguntaUI.temasDisponibles.clear()
-                                viewModel.cargarTemasPorArea(areaId)
                                 refreshTrigger++
-                            },
-                            onSelectTema = { temaId ->
-                                preguntaUI.temaId = temaId
-                                refreshTrigger++
-                            },
-                            onSelectNivel = { nivel ->
-                                preguntaUI.nivel = nivel
-                                refreshTrigger++
-                            },
-                            onSelectCorrect = { optIndex ->
-                                preguntas[qIndex] = preguntas[qIndex].copy(opcionCorrecta = optIndex)
-                                refreshTrigger++
-                            },
-                            onDeleteQuestion = {
-                                if (preguntas.size > 1) {
-                                    preguntas.removeAt(qIndex)
-                                } else {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Debe quedar al menos 1 pregunta")
-                                    }
-                                }
-                                scope.launch { scrollState.animateScrollTo(0) }
-                            },
-                            onCreateTema = { descripcion, areaId, callback ->
-                                viewModel.crearTema(descripcion, areaId) { success, errorMsg ->
-                                    if (success) {
-                                        viewModel.cargarTemasPorArea(areaId)
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar("Tema creado exitosamente")
-                                        }
-                                    } else {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(errorMsg ?: "Error al crear tema")
-                                        }
-                                    }
-                                    callback(success, errorMsg)
+                            } else {
+                                scope.launch { snackbarHostState.showSnackbar("Debe quedar al menos 2 opciones") }
+                            }
+                        },
+                        onPickQuestionImage = {
+                            lastQuestionIdForQuestionImage = preguntaUI.id
+                            pickQuestionImageLauncher.launch("image/*")
+                        },
+                        onPickOptionImage = { optIndex ->
+                            lastQuestionIdForOptionImage = preguntaUI.id
+                            lastOptionIndexForImage = optIndex
+                            pickOptionImageLauncher.launch("image/*")
+                        },
+                        onSelectArea = { areaId ->
+                            preguntaUI.areaId = areaId
+                            preguntaUI.temaId = null
+                            preguntaUI.temasDisponibles.clear()
+                            viewModel.cargarTemasPorArea(areaId)
+                            refreshTrigger++
+                        },
+                        onSelectTema = { temaId ->
+                            preguntaUI.temaId = temaId
+                            refreshTrigger++
+                        },
+                        onSelectNivel = { nivel ->
+                            preguntaUI.nivel = nivel
+                            refreshTrigger++
+                        },
+                        onSelectCorrect = { optIndex ->
+                            preguntas[qIndex] = preguntas[qIndex].copy(opcionCorrecta = optIndex)
+                            refreshTrigger++
+                        },
+                        onDeleteQuestion = {
+                            if (preguntas.size > 1) {
+                                preguntas.removeAt(qIndex)
+                            } else {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Debe quedar al menos 1 pregunta")
                                 }
                             }
+                            scope.launch { scrollState.animateScrollTo(0) }
+                        },
+                        onCreateTema = { descripcion, areaId, callback ->
+                            viewModel.crearTema(descripcion, areaId) { success, errorMsg ->
+                                if (success) {
+                                    viewModel.cargarTemasPorArea(areaId)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Tema creado exitosamente")
+                                    }
+                                } else {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(errorMsg ?: "Error al crear tema")
+                                    }
+                                }
+                                callback(success, errorMsg)
+                            }
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            BottomButton(
+                onBack = { navController.popBackStack() },
+                onNew = {
+                    preguntas.add(PreguntaUI())
+                    scope.launch { scrollState.animateScrollTo(scrollState.maxValue) }
+                },
+                // Reemplaza el bloque onSave por este:
+
+                onSave = {
+                    val (ok, msg) = validarTodas()
+                    if (!ok) {
+                        scope.launch { snackbarHostState.showSnackbar(msg ?: "Error de validación") }
+                        return@BottomButton
+                    }
+
+                    val preguntasLote = preguntas.map { p ->
+                        PreguntaLoteUI(
+                            enunciado = p.enunciado.text.ifBlank { null },
+                            nivel = p.nivel ?: "Medio",
+                            idArea = p.areaId ?: 0,
+                            idTema = p.temaId,
+                            imagenPregunta = p.imagenPregunta,
+                            opciones = p.opciones.mapIndexed { oi, txt ->
+                                OpcionLoteUI(
+                                    texto = txt.ifBlank { null },
+                                    esCorrecta = (p.opcionCorrecta == oi),
+                                    imagenOpcion = p.imagenesOpciones.getOrNull(oi)
+                                )
+                            }.filter { it.texto != null || it.imagenOpcion != null }
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                BottomButton(
-                    onBack = { navController.popBackStack() },
-                    onNew = {
-                        preguntas.add(PreguntaUI())
-                        scope.launch { scrollState.animateScrollTo(scrollState.maxValue) }
-                    },
-                    onSave = {
-                        val (ok, msg) = validarTodas()
-                        if (!ok) {
-                            scope.launch { snackbarHostState.showSnackbar(msg ?: "Error de validación") }
-                            return@BottomButton
-                        }
-
-                        val preguntasLote = preguntas.map { p ->
-                            PreguntaLoteUI(
-                                enunciado = p.enunciado.text.ifBlank { null },
-                                nivel = p.nivel ?: "Medio",
-                                idArea = p.areaId ?: 0,
-                                idTema = p.temaId,
-                                imagenPregunta = p.imagenPregunta,
-                                opciones = p.opciones.mapIndexed { oi, txt ->
-                                    OpcionLoteUI(
-                                        texto = txt.ifBlank { null },
-                                        esCorrecta = (p.opcionCorrecta == oi),
-                                        imagenOpcion = p.imagenesOpciones.getOrNull(oi)
-                                    )
-                                }.filter { it.texto != null || it.imagenOpcion != null }
-                            )
-                        }
-
-                        viewModel.crearPreguntasLote(preguntasLote) { success, errorMsg ->
-                            scope.launch {
-                                if (success) {
-                                    snackbarHostState.showSnackbar(
-                                        errorMsg ?: "Preguntas creadas correctamente"
-                                    )
-                                    preguntas.clear()
-                                    preguntas.add(PreguntaUI())
-                                    scrollState.animateScrollTo(0)
-                                } else {
-                                    snackbarHostState.showSnackbar(errorMsg ?: "Error creando preguntas")
+                    // 🔔 Pasar el context al ViewModel
+                    viewModel.crearPreguntasLote(context, preguntasLote) { success, errorMsg ->
+                        scope.launch {
+                            if (success) {
+                                // 🔕 NO mostrar snackbar - solo limpiar
+                                preguntas.clear()
+                                preguntas.add(PreguntaUI())
+                                scrollState.animateScrollTo(0)
+                            } else {
+                                // Solo mostrar errores
+                                if (errorMsg != null) {
+                                    snackbarHostState.showSnackbar(errorMsg)
                                 }
                             }
                         }
                     }
-                )
+                }
+            )
 
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+            Spacer(modifier = Modifier.height(24.dp))
+        }
 
-            // 🆕 INDICADOR DE CARGA CON PROGRESO
-            if (loading) {
-                Box(
+        // 🆕 INDICADOR DE CARGA CON PROGRESO
+        if (loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth(0.85f)
+                        .wrapContentHeight(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
-                    Card(
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth(0.85f)
-                            .wrapContentHeight(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(48.dp),
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp),
+                            color = Color(0xFF485E92),
+                            strokeWidth = 4.dp
+                        )
+
+                        if (uploadProgress.isNotEmpty()) {
+                            Text(
+                                text = uploadProgress,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
                                 color = Color(0xFF485E92),
-                                strokeWidth = 4.dp
-                            )
-
-                            if (uploadProgress.isNotEmpty()) {
-                                Text(
-                                    text = uploadProgress,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF485E92),
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-
-                            Text(
-                                text = "No cierres la aplicación",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.Gray,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Text(
-                                text = "Este proceso puede tomar algunos minutos dependiendo del número de imágenes",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
+
+                        Text(
+                            text = "No cierres la aplicación",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Text(
+                            text = "Este proceso puede tomar algunos minutos dependiendo del número de imágenes",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }
+        }
 
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                SnackbarHost(hostState = snackbarHostState)
-            }
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            SnackbarHost(hostState = snackbarHostState)
         }
     }
 }
+
 
 @Composable
 fun PreguntaItem(
@@ -483,7 +487,7 @@ fun PreguntaItem(
     }
 }
 
-private fun uriToFile(context: android.content.Context, uri: Uri, fileName: String): File {
+private fun uriToFile(context: Context, uri: Uri, fileName: String): File {
     val inputStream: InputStream = context.contentResolver.openInputStream(uri)
         ?: throw IllegalArgumentException("No se pudo abrir el uri")
     val file = File(context.cacheDir, fileName)

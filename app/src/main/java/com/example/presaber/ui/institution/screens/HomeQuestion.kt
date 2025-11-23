@@ -1,4 +1,4 @@
-package com.example.presaber.ui.institution
+package com.example.presaber.ui.institution.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -17,30 +17,16 @@ fun HomeQuestion(
     var selectedNavItem by remember { mutableStateOf(2) } // Por ejemplo, 2 si este es el ítem de Preguntas
     val showAccountDialog = remember { mutableStateOf(false) }
 
-    InstitutionLayout(
-        selectedNavItem = selectedNavItem,
-        onNavItemSelected = { index ->
-            selectedNavItem = index
-            // Aquí puedes manejar navegación según el índice
-            when (index) {
-                0 -> { /* Ir a inicio */ }
-                1 -> { /* Ir a profesores */ }
-                2 -> { /* Banco de preguntas (actual) */ }
-                3 -> { /* Ir a grupos */ }
-                4 -> { /* Ir a configuración/gamificación */ }
+
+    Box(modifier = Modifier) {
+        HomeQuestionContent(
+            onSubjectClick = { subject ->
+                onNavigateToSubject(subject)
             }
-        },
-        showAccountDialog = showAccountDialog
-    ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
-            HomeQuestionContent(
-                onSubjectClick = { subject ->
-                    onNavigateToSubject(subject)
-                }
-            )
-        }
+        )
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

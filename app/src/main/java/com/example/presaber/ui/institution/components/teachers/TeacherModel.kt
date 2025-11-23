@@ -2,8 +2,10 @@ package com.example.presaber.ui.institution.components.teachers
 
 data class Teacher(
     val name: String,
-    val imageRes: Int
+    val imageRes: Int,
+    val photoUrl: String? = null
 )
+
 
 val teacherList = listOf(
     Teacher("Henry Alexander", com.example.presaber.R.drawable.icon_user),

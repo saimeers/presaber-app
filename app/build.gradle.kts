@@ -54,6 +54,7 @@ dependencies {
     // Compose UI
     implementation("androidx.compose.ui:ui:1.7.3")
     implementation("androidx.compose.ui:ui-tooling-preview:1.7.3")
+    implementation(libs.androidx.compose.material3)
     debugImplementation("androidx.compose.ui:ui-tooling:1.7.3")
 
     // Retrofit

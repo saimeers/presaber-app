@@ -1,8 +1,23 @@
+// ============================================
+// 1. VIEWMODEL ACTUALIZADO
+// ============================================
 package com.example.presaber.ui.institution.viewmodel
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.presaber.R
 import com.example.presaber.data.remote.Area
+import com.example.presaber.data.remote.EditarOpcionUI
+import com.example.presaber.data.remote.EditarPreguntaUI
+import com.example.presaber.data.remote.Opcion
+import com.example.presaber.data.remote.Pregunta
+import com.example.presaber.data.remote.PreguntaCompletaResponse
 import com.example.presaber.data.remote.PreguntaLoteUI
 import com.example.presaber.data.remote.RetrofitClient
 import com.example.presaber.data.remote.Tema
@@ -33,15 +48,22 @@ class CreateQuestionViewModel : ViewModel() {
     private val _temas = MutableStateFlow<List<Tema>>(emptyList())
     val temas: StateFlow<List<Tema>> = _temas
 
-    // 🆕 Para mostrar progreso al usuario
     private val _uploadProgress = MutableStateFlow<String>("")
     val uploadProgress: StateFlow<String> = _uploadProgress
+
+    // 🆕 Para ocultar el loading cuando recibamos 202
+    private val _shouldDismissLoading = MutableStateFlow(false)
+    val shouldDismissLoading: StateFlow<Boolean> = _shouldDismissLoading
+
+    companion object {
+        private const val CHANNEL_ID = "preguntas_channel"
+        private const val NOTIFICATION_ID = 1001
+    }
 
     init {
         cargarAreas()
     }
 
-    // Cargar áreas desde API
     fun cargarAreas() {
         viewModelScope.launch {
             try {
@@ -54,7 +76,6 @@ class CreateQuestionViewModel : ViewModel() {
         }
     }
 
-    // Cargar temas según area
     fun cargarTemasPorArea(idArea: Int) {
         viewModelScope.launch {
             try {
@@ -67,7 +88,6 @@ class CreateQuestionViewModel : ViewModel() {
         }
     }
 
-    // Crear tema nuevo (envía { descripcion, id_area })
     fun crearTema(descripcion: String, idArea: Int, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             try {
@@ -83,92 +103,62 @@ class CreateQuestionViewModel : ViewModel() {
         }
     }
 
-    fun crearPreguntaConOpciones(
-        enunciado: String,
-        nivel: String,
-        idArea: Int,
-        idTema: Int?,
-        opciones: List<String>,
-        correctIndex: Int,
-        imagenPregunta: java.io.File?,
-        imagenesOpciones: List<java.io.File?>,
-        onComplete: (Boolean, String?) -> Unit
-    ) {
+    // Crear canal de notificaciones
+    fun createNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "Preguntas"
+            val descriptionText = "Notificaciones sobre la creación de preguntas"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
 
-        viewModelScope.launch {
-            _loading.value = true
-            _error.value = null
-            _success.value = false
+    // Mostrar notificación de éxito
+    private fun showSuccessNotification(context: Context, numPreguntas: Int) {
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground) // Usa tu propio ícono
+            .setContentTitle("✅ Preguntas creadas")
+            .setContentText("Se crearon $numPreguntas pregunta(s) exitosamente")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setStyle(NotificationCompat.BigTextStyle()
+                .bigText("Tus $numPreguntas pregunta(s) se han guardado correctamente en la base de datos."))
+
+        with(NotificationManagerCompat.from(context)) {
             try {
-
-                val api = RetrofitClient.api
-
-                // Crear Pregunta
-                val enunciadoRB = RequestBody.create("text/plain".toMediaTypeOrNull(), enunciado)
-                val nivelRB = RequestBody.create("text/plain".toMediaTypeOrNull(), nivel)
-                val areaRB = RequestBody.create("text/plain".toMediaTypeOrNull(), idArea.toString())
-                val temaRB = idTema?.let {
-                    RequestBody.create("text/plain".toMediaTypeOrNull(), it.toString())
-                }
-
-                val imagenPart = imagenPregunta?.let {
-                    val rb = RequestBody.create("image/*".toMediaTypeOrNull(), it)
-                    MultipartBody.Part.createFormData("file", it.name, rb)
-                }
-
-                val preguntaCreated = api.crearPregunta(
-                    enunciado = enunciadoRB,
-                    nivelDificultad = nivelRB,
-                    idArea = areaRB,
-                    idTema = temaRB,
-                    file = imagenPart
-                )
-
-                val idPregunta = preguntaCreated.id_pregunta
-
-                // ---------- PASO 2: Crear opciones ----------
-                for (i in opciones.indices) {
-
-                    val textoRB =
-                        RequestBody.create("text/plain".toMediaTypeOrNull(), opciones[i])
-
-                    val correctaRB = RequestBody.create(
-                        "text/plain".toMediaTypeOrNull(),
-                        if (i == correctIndex) "true" else "false"
-                    )
-
-                    val idPreguntaRB = RequestBody.create(
-                        "text/plain".toMediaTypeOrNull(),
-                        idPregunta.toString()
-                    )
-
-                    val imgOpcionPart = imagenesOpciones[i]?.let { file ->
-                        val rb = RequestBody.create("image/*".toMediaTypeOrNull(), file)
-                        MultipartBody.Part.createFormData("file", file.name, rb)
-                    }
-
-                    api.crearOpcion(
-                        textoOpcion = textoRB,
-                        esCorrecta = correctaRB,
-                        idPregunta = idPreguntaRB,
-                        file = imgOpcionPart
-                    )
-                }
-
-                _success.value = true
-                onComplete(true, null)
-            } catch (e: Exception) {
+                notify(NOTIFICATION_ID, builder.build())
+            } catch (e: SecurityException) {
                 e.printStackTrace()
-                _error.value = "Error al crear pregunta y opciones"
-                onComplete(false, e.message ?: "Error")
-            } finally {
-                _loading.value = false
             }
         }
     }
 
+    // Mostrar notificación de error
+    private fun showErrorNotification(context: Context, error: String) {
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("❌ Error al crear preguntas")
+            .setContentText(error)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(error))
+
+        with(NotificationManagerCompat.from(context)) {
+            try {
+                notify(NOTIFICATION_ID, builder.build())
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     fun crearPreguntasLote(
+        context: Context,
         preguntas: List<PreguntaLoteUI>,
         onComplete: (Boolean, String?) -> Unit
     ) {
@@ -176,7 +166,11 @@ class CreateQuestionViewModel : ViewModel() {
             _loading.value = true
             _error.value = null
             _success.value = false
+            _shouldDismissLoading.value = false
             _uploadProgress.value = "Preparando archivos..."
+
+            // Crear canal de notificaciones
+            createNotificationChannel(context)
 
             try {
                 val client = OkHttpClient.Builder()
@@ -185,12 +179,10 @@ class CreateQuestionViewModel : ViewModel() {
                     .readTimeout(60, TimeUnit.SECONDS)
                     .build()
 
-
                 val api = RetrofitClient.createApiWithClient(client)
 
                 _uploadProgress.value = "Construyendo petición..."
 
-                // 1. Convertir preguntas a JSON
                 val json = buildJsonString(preguntas)
                 val dataRB = RequestBody.create(
                     "application/json".toMediaTypeOrNull(),
@@ -201,7 +193,6 @@ class CreateQuestionViewModel : ViewModel() {
                 var totalImagenes = 0
 
                 preguntas.forEachIndexed { pIndex, pregunta ->
-                    // Imagen de la pregunta
                     pregunta.imagenPregunta?.let { file ->
                         val rb = RequestBody.create("image/*".toMediaTypeOrNull(), file)
                         val part = MultipartBody.Part.createFormData(
@@ -213,7 +204,6 @@ class CreateQuestionViewModel : ViewModel() {
                         totalImagenes++
                     }
 
-                    // Imágenes de las opciones
                     pregunta.opciones.forEachIndexed { oIndex, opcion ->
                         opcion.imagenOpcion?.let { file ->
                             val rb = RequestBody.create("image/*".toMediaTypeOrNull(), file)
@@ -230,43 +220,45 @@ class CreateQuestionViewModel : ViewModel() {
 
                 _uploadProgress.value = "Enviando ${preguntas.size} preguntas con $totalImagenes imágenes..."
 
-                // 3. Hacer petición
                 val response = api.crearPreguntasLote(dataRB, parts)
 
                 when (response.code()) {
                     202 -> {
                         _uploadProgress.value = "Procesando en el servidor..."
+                        _shouldDismissLoading.value = true
                         _success.value = true
-                        onComplete(
-                            true,
-                            "Las preguntas se están procesando. Esto puede tomar unos minutos."
-                        )
+
+                        kotlinx.coroutines.delay(3000) // Simular espera de procesamiento
+                        showSuccessNotification(context, preguntas.size)
+
+                        onComplete(true, null) // No mostrar Snackbar
                     }
                     201, 200 -> {
                         _uploadProgress.value = "¡Completado!"
                         _success.value = true
+                        showSuccessNotification(context, preguntas.size)
                         onComplete(true, null)
                     }
                     else -> {
-
                         val errorMsg = response.errorBody()?.string() ?: "Error ${response.code()}"
                         _error.value = errorMsg
                         _uploadProgress.value = ""
+                        showErrorNotification(context, errorMsg)
                         onComplete(false, errorMsg)
                     }
                 }
 
             } catch (e: java.net.SocketTimeoutException) {
                 _uploadProgress.value = ""
-                _error.value = "Timeout: El proceso tardó más de lo esperado"
-                onComplete(
-                    false,
-                    "El servidor tardó en responder. Las preguntas podrían haberse guardado correctamente. Verifica en la lista de preguntas."
-                )
+                _error.value = "Timeout"
+                val errorMsg = "El servidor tardó en responder. Verifica si las preguntas se guardaron."
+                showErrorNotification(context, errorMsg)
+                onComplete(false, errorMsg)
             } catch (e: Exception) {
                 e.printStackTrace()
                 _uploadProgress.value = ""
                 _error.value = e.message
+                showErrorNotification(context, e.message ?: "Error desconocido")
                 onComplete(false, e.message ?: "Error desconocido")
             } finally {
                 _loading.value = false
@@ -294,4 +286,11 @@ class CreateQuestionViewModel : ViewModel() {
 
         return Gson().toJson(root)
     }
+
+    fun resetShouldDismissLoading() {
+        _shouldDismissLoading.value = false
+    }
+
 }
+
+

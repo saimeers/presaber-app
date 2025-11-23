@@ -13,8 +13,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             PresaberTheme {
-                MainNavigation()
-                InstitutionNavHost()
+                //MainNavigation()
+                InstitutionNavHost(idInstitucion=1)
             }
         }
     }

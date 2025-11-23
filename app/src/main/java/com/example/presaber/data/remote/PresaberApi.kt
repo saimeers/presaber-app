@@ -1,5 +1,7 @@
 package com.example.presaber.data.remote
 
+import com.example.presaber.R
+import com.example.presaber.ui.institution.components.teachers.Teacher
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.*
@@ -167,6 +169,55 @@ data class OpcionLoteUI(
     val imagenOpcion: File?
 )
 
+data class EditarPreguntaUI(
+    val idPregunta: Int,
+    val enunciado: String,
+    val nivel: String,
+    val idArea: Int,
+    val idTema: Int?,
+    val imagenNueva: File?
+)
+
+data class EditarOpcionUI(
+    val idOpcion: Int,
+    val texto: String?,
+    val esCorrecta: Boolean,
+    val imagenNueva: File?,
+    val eliminarImagen: Boolean = false
+)
+
+data class PreguntaCompletaResponse(
+    val id_pregunta: Int,
+    val enunciado: String,
+    val imagen: String?,
+    val nivel_dificultad: String,
+    val id_area: Int,
+    val id_tema: Int,
+    val area: Area,
+    val tema: Tema,
+    val opcions: List<Opcion>
+)
+
+data class TeacherResponse(
+    val documento: String,
+    val nombre: String,
+    val apellido: String,
+    val correo: String,
+    val telefono: String,
+    val fecha_nacimiento: String,
+    val uid_firebase: String?,
+    val photoURL: String?,
+    val displayName: String?
+){
+    fun toTeacher(): Teacher {
+        return Teacher(
+            name = displayName ?: "$nombre $apellido",
+            imageRes = R.drawable.user_profile,
+            photoUrl = photoURL
+        )
+    }
+}
+
 
 interface PresaberApi {
     @GET("api/institucion")
@@ -238,6 +289,34 @@ interface PresaberApi {
     ): Response<Map<String, Any>>
 
 
+    // EDITAR PREGUNTA
+    @Multipart
+    @PUT("api/preguntas/{id}/opciones")
+    suspend fun editarPreguntaConOpciones(
+        @Path("id") idPregunta: Int,
+        @Part("enunciado") enunciado: RequestBody,
+        @Part("nivel_dificultad") nivelDificultad: RequestBody,
+        @Part("id_area") idArea: RequestBody,
+        @Part("id_tema") idTema: RequestBody?,
+        @Part file: MultipartBody.Part? = null,  // Imagen de la pregunta
+        @Part("eliminar_imagen") eliminarImagen: RequestBody,
+        @Part("opciones") opciones: RequestBody,
+        @Part imagenesOpciones: List<MultipartBody.Part>? = null  // ✅ Imágenes de opciones
+    ): Pregunta
+
+
+    @Multipart
+    @PUT("api/preguntas/{id}/opciones")
+    suspend fun editarPreguntaConOpcionesMultipart(
+        @Path("id") idPregunta: Int,
+        @PartMap parts: Map<String, @JvmSuppressWildcards RequestBody>,
+        @Part files: List<MultipartBody.Part>
+    ): Pregunta
+
+
+
+    @GET("api/preguntas/{id_pregunta}")
+    suspend fun getPregunta(@Path("id_pregunta") idPregunta: Int): PreguntaCompletaResponse
 
 
     @GET("api/retos/area/{idArea}")
@@ -251,6 +330,9 @@ interface PresaberApi {
 
     @POST("api/retos/resultado")
     suspend fun postResultado(@Body body: ResultadoRequest): ResultadoResponse
+
+    @GET("api/usuarios/institucion/{id_institucion}")
+    suspend fun getDocentes(@Path("id_institucion") idInstitucion: Int): List<TeacherResponse>
 
 
 }

@@ -1,8 +1,9 @@
-package com.example.presaber.ui.institution
+package com.example.presaber.ui.institution.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -11,6 +12,7 @@ import com.example.presaber.data.remote.Pregunta
 import com.example.presaber.ui.institution.components.*
 import com.example.presaber.ui.theme.PresaberTheme
 import com.example.presaber.layout.InstitutionLayout
+import com.example.presaber.ui.institution.components.questions.LocalNavController
 import com.example.presaber.ui.institution.components.questions.QuestionItem
 import com.example.presaber.ui.institution.components.questions.QuestionsHeader
 import com.example.presaber.ui.institution.components.questions.QuestionsList
@@ -21,8 +23,9 @@ fun QuestionsScreen(
     idArea: Int,
     areaName: String,
     areaIcon: Int,
-    viewModel: QuestionsViewModel = viewModel()
+    viewModel: QuestionsViewModel = viewModel(),
 ) {
+    val navController = LocalNavController.current
     // Observar el flujo de preguntas y loading
     val preguntas by viewModel.preguntas.collectAsState()
     val loading by viewModel.loading.collectAsState()
@@ -40,12 +43,8 @@ fun QuestionsScreen(
     }
 
     // Layout principal
-    InstitutionLayout(
-        selectedNavItem = 2,
-        onNavItemSelected = {},
-        showAccountDialog = remember { mutableStateOf(false) }
-    ) { paddingValues ->
-        Column(modifier = Modifier.padding(paddingValues)) {
+
+        Column(modifier = Modifier) {
 
             // Encabezado del área
             AreaHeader(nombreArea = areaName, icono = areaIcon)
@@ -66,7 +65,7 @@ fun QuestionsScreen(
 
             // Mostrar indicador de carga
             if (loading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
             } else {
@@ -82,12 +81,14 @@ fun QuestionsScreen(
                         )
                     },
                     selectedId = null,
-                    onSelect = {}
+                    onSelect = { idPregunta ->
+                        navController.navigate("editQuestion/$idPregunta")
+                    }
                 )
             }
         }
     }
-}
+
 
 @Preview(showBackground = true)
 @Composable

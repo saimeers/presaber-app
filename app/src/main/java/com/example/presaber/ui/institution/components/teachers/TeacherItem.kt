@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 
 @Composable
 fun TeacherItem(
@@ -23,16 +24,25 @@ fun TeacherItem(
             .clickable(onClick = onClick)
             .padding(4.dp)
     ) {
-        Image(
-            painter = painterResource(id = teacher.imageRes),
-            contentDescription = teacher.name,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(MaterialTheme.shapes.large)
-        )
+        if (teacher.photoUrl != null) {
+            AsyncImage(
+                model = teacher.photoUrl,
+                contentDescription = teacher.name,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(MaterialTheme.shapes.large)
+            )
+        } else {
+            Image(
+                painter = painterResource(id = teacher.imageRes),
+                contentDescription = teacher.name,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(MaterialTheme.shapes.large)
+            )
+        }
 
         Spacer(modifier = Modifier.width(12.dp))
-
         Text(text = teacher.name, color = MaterialTheme.colorScheme.onSurface)
     }
 }
