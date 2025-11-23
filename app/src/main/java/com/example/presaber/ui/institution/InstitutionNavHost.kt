@@ -7,9 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.presaber.ui.institution.components.SubjectArea
-import com.example.presaber.ui.institution.components.LocalNavController  // 🔹 IMPORTA ESTO
-import com.example.presaber.ui.institution.CreateQuestionScreen
+import com.example.presaber.ui.institution.components.questions.SubjectArea
+import com.example.presaber.ui.institution.components.questions.LocalNavController  // 🔹 IMPORTA ESTO
 
 @Composable
 fun InstitutionNavHost() {
@@ -60,6 +59,10 @@ fun InstitutionNavHost() {
                     areaName = areaName,
                     areaIcon = areaIcon
                 )
+            }
+
+            composable("TeachersScreen") {
+                TeachersScreen()
             }
         }
     }

@@ -87,7 +87,73 @@ fun InstitutionLayout(
                 )
             )
         },
-        bottomBar = { /* tu barra igual */ },
+        bottomBar = {
+            NavigationBar(
+                containerColor = Color(0xFFE2E7EE),
+                modifier = Modifier.height(80.dp)
+            ) {
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            Icons.Default.Home,
+                            contentDescription = "Inicio",
+                            modifier = Modifier.size(22.dp)
+                        )
+                    },
+                    selected = selectedNavItem == 0,
+                    onClick = { onNavItemSelected(0) }
+                )
+
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            painterResource(id = R.drawable.icon_profesores),
+                            contentDescription = "Profesores",
+                            modifier = Modifier.size(22.dp)
+                        )
+                    },
+                    selected = selectedNavItem == 1,
+                    onClick = { onNavItemSelected(1) }
+                )
+
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            painterResource(id = R.drawable.icon_pregunta),
+                            contentDescription = "Preguntas",
+                            modifier = Modifier.size(22.dp)
+                        )
+                    },
+                    selected = selectedNavItem == 2,
+                    onClick = { onNavItemSelected(2) }
+                )
+
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            painterResource(id = R.drawable.icon_grupos),
+                            contentDescription = "Grupos",
+                            modifier = Modifier.size(22.dp)
+                        )
+                    },
+                    selected = selectedNavItem == 3,
+                    onClick = { onNavItemSelected(3) }
+                )
+
+
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            painterResource(id = R.drawable.icon_gamificacion),
+                            contentDescription = "Gamificación",
+                            modifier = Modifier.size(22.dp)
+                        )
+                    },
+                    selected = selectedNavItem == 4,
+                    onClick = { onNavItemSelected(4) }
+                )
+            }
+        },
         content = content
     )
 

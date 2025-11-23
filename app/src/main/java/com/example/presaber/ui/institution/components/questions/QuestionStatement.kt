@@ -1,4 +1,4 @@
-package com.example.presaber.ui.institution.components
+package com.example.presaber.ui.institution.components.questions
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.*

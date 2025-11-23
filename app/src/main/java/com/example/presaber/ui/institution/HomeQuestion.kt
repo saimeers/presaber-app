@@ -6,8 +6,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.presaber.layout.InstitutionLayout
-import com.example.presaber.ui.institution.components.HomeQuestionContent
-import com.example.presaber.ui.institution.components.SubjectArea
+import com.example.presaber.ui.institution.components.questions.HomeQuestionContent
+import com.example.presaber.ui.institution.components.questions.SubjectArea
 import com.example.presaber.ui.theme.PresaberTheme
 
 @Composable

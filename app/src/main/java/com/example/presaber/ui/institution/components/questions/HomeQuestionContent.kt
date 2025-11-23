@@ -1,4 +1,4 @@
-package com.example.presaber.ui.institution.components
+package com.example.presaber.ui.institution.components.questions
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -22,7 +22,7 @@ import com.example.presaber.ui.theme.PresaberTheme
 import com.example.presaber.ui.components.AddCard
 import androidx.compose.runtime.compositionLocalOf
 import androidx.navigation.NavController
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.navigation.compose.rememberNavController
 
 val LocalNavController = compositionLocalOf<NavController> {
     error("NavController not provided")
@@ -183,7 +183,7 @@ fun SubjectCard(
 @Composable
 fun HomeQuestionContentPreview(){
     PresaberTheme{
-        val navController = androidx.navigation.compose.rememberNavController()
+        val navController = rememberNavController()
         HomeQuestionContent()
     }
 }

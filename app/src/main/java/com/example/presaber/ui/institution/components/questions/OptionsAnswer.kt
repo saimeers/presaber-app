@@ -1,7 +1,8 @@
-package com.example.presaber.ui.institution.components
+package com.example.presaber.ui.institution.components.questions
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,7 +20,9 @@ fun OptionsAnswer(
     opcionSeleccionada: Int?,
     onSelect: (Int) -> Unit,
     onChange: (Int, String) -> Unit,
-    onUploadImage: (Int) -> Unit
+    onUploadImage: (Int) -> Unit,
+    onAddOption: () -> Unit,
+    onDeleteOption: (Int) -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -53,11 +56,11 @@ fun OptionsAnswer(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // ✏️ Campo de texto editable
+                    // ✏️ Campo de texto editable con placeholder
                     TextField(
                         value = texto,
                         onValueChange = { onChange(index, it) },
-                        label = { Text("Opción ${index + 1}") },
+                        placeholder = { Text("Opción ${index + 1}") },
                         modifier = Modifier.weight(1f),
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
@@ -68,21 +71,20 @@ fun OptionsAnswer(
                             unfocusedContainerColor = Color.Transparent,
                             disabledContainerColor = Color.Transparent,
                             errorContainerColor = Color.Transparent
-                        ),
-                        singleLine = true
+                        )
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // 🖼️ Botón de imagen
+                    // 🖼️ Botón de imagen (se oscurece cuando hay imagen)
                     IconButton(
                         onClick = { onUploadImage(index) },
                         colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = if (imagenes[index] != null)
-                                Color(0xFF5B7BC6)
+                            containerColor = if (imagenes.getOrNull(index) != null)
+                                Color(0xFF3D5A8F) // Color oscuro cuando hay imagen
                             else
-                                Color(0xFFD2DEFF),
-                            contentColor = if (imagenes[index] != null)
+                                Color(0xFFD2DEFF), // Color claro cuando no hay
+                            contentColor = if (imagenes.getOrNull(index) != null)
                                 Color.White
                             else
                                 Color(0xFF3D5A8F)
@@ -91,11 +93,29 @@ fun OptionsAnswer(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Image,
-                            contentDescription = "Agregar imagen"
+                            contentDescription = if (imagenes.getOrNull(index) != null)
+                                "Imagen cargada"
+                            else
+                                "Agregar imagen"
                         )
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    // Delete button (solo si hay más de 2 opciones)
+                    if (opciones.size > 2) {
+                        IconButton(onClick = { onDeleteOption(index) }) {
+                            Icon(imageVector = Icons.Default.Delete, contentDescription = "Eliminar opción")
+                        }
                     }
                 }
             }
+        }
+        OutlinedButton(
+            onClick = { onAddOption() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Agregar opción")
         }
     }
 }
@@ -103,9 +123,9 @@ fun OptionsAnswer(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun OptionsAnswerPreview() {
-    val opciones = remember { mutableStateListOf("Opción 1", "Opción 2", "Opción 3", "Opción 4") }
-    val imagenes = remember { mutableStateListOf<String?>(null, null, null, null) }
-    var seleccionada by remember { mutableStateOf<Int?>(null) }
+    val opciones = remember { mutableStateListOf("", "", "Opción 3", "Opción 4") }
+    val imagenes = remember { mutableStateListOf<String?>(null, "imagen.jpg", null, null) }
+    var seleccionada by remember { mutableStateOf<Int?>(1) }
 
     PresaberTheme {
         Surface(
@@ -120,8 +140,11 @@ fun OptionsAnswerPreview() {
                 onSelect = { seleccionada = it },
                 onChange = { index, valor -> opciones[index] = valor },
                 onUploadImage = { index ->
-                    println("Subir imagen para opción $index")
-                }
+                    // Simular carga de imagen
+                    imagenes[index] = if (imagenes[index] == null) "imagen_$index.jpg" else null
+                },
+                onAddOption = {},
+                onDeleteOption = {}
             )
         }
     }

@@ -11,6 +11,9 @@ import com.example.presaber.data.remote.Pregunta
 import com.example.presaber.ui.institution.components.*
 import com.example.presaber.ui.theme.PresaberTheme
 import com.example.presaber.layout.InstitutionLayout
+import com.example.presaber.ui.institution.components.questions.QuestionItem
+import com.example.presaber.ui.institution.components.questions.QuestionsHeader
+import com.example.presaber.ui.institution.components.questions.QuestionsList
 import com.example.presaber.ui.institution.viewmodel.QuestionsViewModel
 
 @Composable
@@ -75,7 +78,7 @@ fun QuestionsScreen(
                             title = it.enunciado ?: "(Sin enunciado)",
                             tema = "Tema: ${it.tema?.descripcion ?: "Sin tema"} ",
                             nivel = it.nivel_dificultad ?: "Sin nivel",
-                            imagen = it.imagen?: ""
+                            imagen = it.imagen ?: ""
                         )
                     },
                     selectedId = null,

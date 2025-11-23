@@ -3,6 +3,9 @@ package com.example.presaber.data.remote
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.*
+import java.io.File
+import retrofit2.Response
+
 
 data class Institucion(val id_institucion: Int, val nombre: String)
 data class Curso(val id: String, val nombre: String)
@@ -86,7 +89,8 @@ data class Pregunta(
 data class Opcion(
     val id_opcion: Int,
     val texto_opcion: String?,
-    val imagen: String?
+    val imagen: String?,
+    val es_correcta: Boolean? = null
 )
 
 data class RetoInfo(
@@ -142,6 +146,28 @@ data class ResultadoResponse(
     val data: ResultadoData
 )
 
+data class CrearTemaResponse(
+    val message: String,
+    val tema: Tema
+)
+
+
+data class PreguntaLoteUI(
+    val enunciado: String?,
+    val nivel: String,
+    val idArea: Int,
+    val idTema: Int?,
+    val imagenPregunta: File?,
+    val opciones: List<OpcionLoteUI>
+)
+
+data class OpcionLoteUI(
+    val texto: String?,
+    val esCorrecta: Boolean,
+    val imagenOpcion: File?
+)
+
+
 interface PresaberApi {
     @GET("api/institucion")
     suspend fun getInstituciones(): List<Institucion>
@@ -174,7 +200,14 @@ interface PresaberApi {
     @GET("api/temas/area/{id_area}")
     suspend fun getTemasPorArea(@Path("id_area") idArea: Int): List<Tema>
 
-    // Crear pregunta con imagen (Multipart)
+    //Crear Tema
+
+    @POST("api/temas")
+    suspend fun crearTema(
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): Tema
+
+    // Crear pregunta (sin opciones)
     @Multipart
     @POST("api/preguntas/crear")
     suspend fun crearPregunta(
@@ -182,10 +215,30 @@ interface PresaberApi {
         @Part("nivel_dificultad") nivelDificultad: RequestBody,
         @Part("id_area") idArea: RequestBody,
         @Part("id_tema") idTema: RequestBody?,
-        @Part("opciones") opciones: RequestBody,
-        @Part("respuesta_correcta") respuestaCorrecta: RequestBody,
         @Part file: MultipartBody.Part? = null
     ): Pregunta
+
+
+    // Crear opción
+    @Multipart
+    @POST("api/opciones")
+    suspend fun crearOpcion(
+        @Part("texto_opcion") textoOpcion: RequestBody,
+        @Part("es_correcta") esCorrecta: RequestBody,
+        @Part("id_pregunta") idPregunta: RequestBody,
+        @Part file: MultipartBody.Part? = null
+    ): Opcion
+
+
+    @Multipart
+    @POST("api/preguntas/preguntas/lote")
+    suspend fun crearPreguntasLote(
+        @Part("data") data: RequestBody,
+        @Part parts: List<MultipartBody.Part>
+    ): Response<Map<String, Any>>
+
+
+
 
     @GET("api/retos/area/{idArea}")
     suspend fun getRetosPorArea(@Path("idArea") idArea: Int): RetoResponse
@@ -198,4 +251,6 @@ interface PresaberApi {
 
     @POST("api/retos/resultado")
     suspend fun postResultado(@Body body: ResultadoRequest): ResultadoResponse
+
+
 }

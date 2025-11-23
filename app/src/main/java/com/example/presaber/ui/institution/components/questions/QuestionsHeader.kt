@@ -1,4 +1,4 @@
-package com.example.presaber.ui.institution.components
+package com.example.presaber.ui.institution.components.questions
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
