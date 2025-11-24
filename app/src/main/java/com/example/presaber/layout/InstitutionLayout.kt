@@ -90,71 +90,110 @@ fun InstitutionLayout(
         bottomBar = {
             NavigationBar(
                 containerColor = Color(0xFFE2E7EE),
-                modifier = Modifier.height(80.dp)
+                tonalElevation = 0.dp
             ) {
+
+                // Inicio
                 NavigationBarItem(
                     icon = {
                         Icon(
                             Icons.Default.Home,
                             contentDescription = "Inicio",
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     },
                     selected = selectedNavItem == 0,
-                    onClick = { onNavItemSelected(0) }
+                    onClick = { onNavItemSelected(0) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF5B7BC6),
+                        indicatorColor = Color(0xFFD8E2F7)
+                    ),
+                    label = null
                 )
 
+                // Profesores
                 NavigationBarItem(
                     icon = {
                         Icon(
                             painterResource(id = R.drawable.icon_profesores),
                             contentDescription = "Profesores",
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     },
                     selected = selectedNavItem == 1,
-                    onClick = { onNavItemSelected(1) }
+                    onClick = { onNavItemSelected(1) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF5B7BC6),
+                        indicatorColor = Color(0xFFD8E2F7)
+                    ),
+                    label =null
                 )
 
+                // Preguntas
                 NavigationBarItem(
                     icon = {
                         Icon(
                             painterResource(id = R.drawable.icon_pregunta),
                             contentDescription = "Preguntas",
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     },
                     selected = selectedNavItem == 2,
-                    onClick = { onNavItemSelected(2) }
+                    onClick = { onNavItemSelected(2) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF5B7BC6),
+                        indicatorColor = Color(0xFFD8E2F7)
+                    ),
+                    label = null
                 )
 
+                // Grupos
                 NavigationBarItem(
                     icon = {
                         Icon(
                             painterResource(id = R.drawable.icon_grupos),
                             contentDescription = "Grupos",
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     },
                     selected = selectedNavItem == 3,
-                    onClick = { onNavItemSelected(3) }
+                    onClick = { onNavItemSelected(3) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF5B7BC6),
+                        indicatorColor = Color(0xFFD8E2F7)
+                    ),
+                    label = null
                 )
 
-
+                // Gamificación
                 NavigationBarItem(
                     icon = {
                         Icon(
                             painterResource(id = R.drawable.icon_gamificacion),
                             contentDescription = "Gamificación",
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     },
                     selected = selectedNavItem == 4,
-                    onClick = { onNavItemSelected(4) }
+                    onClick = { onNavItemSelected(4) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF5B7BC6),
+                        indicatorColor = Color(0xFFD8E2F7)
+                    ),
+                    label = null
                 )
             }
-        },
-        content = content
+        }
+        ,
+        content = { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize()
+            ) {
+                content(paddingValues)
+            }
+        }
     )
 
     if (showAccountDialog.value) {

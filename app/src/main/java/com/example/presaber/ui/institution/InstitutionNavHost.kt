@@ -1,5 +1,6 @@
 package com.example.presaber.ui.institution
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -46,7 +47,7 @@ fun InstitutionNavHost(idInstitucion: Int ) {
                 NavHost(
                     navController = navController,
                     startDestination = "homeQuestion",
-                    modifier = Modifier.padding(paddingValues)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     composable("homeQuestion") {
                         HomeQuestion(onNavigateToSubject = { subject ->
