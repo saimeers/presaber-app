@@ -207,7 +207,8 @@ data class TeacherResponse(
     val fecha_nacimiento: String,
     val uid_firebase: String?,
     val photoURL: String?,
-    val displayName: String?
+    val displayName: String?,
+    val id_usuario: String? = null // ID del usuario para asociar al curso
 ){
     fun toTeacher(): Teacher {
         return Teacher(
@@ -248,7 +249,7 @@ data class CrearCursoRequest(
     val cohorte: Int,
     val clave_acceso: String,
     val id_institucion: Int,
-    val id_docente: Int? = null
+    val id_docente: String? = null
 )
 
 data class CrearCursoResponse(
@@ -267,6 +268,11 @@ data class ActualizarEstadoRequest(
     val cohorte: Int,
     val id_institucion: Int,
     val habilitado: Boolean
+)
+
+data class ActualizarEstadoResponse(
+    val mensaje: String,
+    val data: CursoResponse
 )
 
 
@@ -349,10 +355,10 @@ interface PresaberApi {
         @Part("nivel_dificultad") nivelDificultad: RequestBody,
         @Part("id_area") idArea: RequestBody,
         @Part("id_tema") idTema: RequestBody?,
-        @Part file: MultipartBody.Part? = null,  // Imagen de la pregunta
+        @Part file: MultipartBody.Part? = null,
         @Part("eliminar_imagen") eliminarImagen: RequestBody,
         @Part("opciones") opciones: RequestBody,
-        @Part imagenesOpciones: List<MultipartBody.Part>? = null  // ✅ Imágenes de opciones
+        @Part imagenesOpciones: List<MultipartBody.Part>? = null
     ): Pregunta
 
 
@@ -403,5 +409,5 @@ interface PresaberApi {
     @PUT("api/curso/actualizar-estado")
     suspend fun actualizarEstadoCurso(
         @Body request: ActualizarEstadoRequest
-    ): CursoResponse
+    ): ActualizarEstadoResponse
 }

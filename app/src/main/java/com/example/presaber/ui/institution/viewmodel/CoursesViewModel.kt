@@ -21,7 +21,10 @@ class CoursesViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    // Variable para almacenar el id de institución
+    // Contador para forzar recomposición
+    private val _refreshTrigger = MutableStateFlow(0)
+    val refreshTrigger: StateFlow<Int> = _refreshTrigger
+
     private var currentIdInstitucion: Int? = null
 
     fun setIdInstitucion(idInstitucion: Int) {
@@ -35,11 +38,8 @@ class CoursesViewModel : ViewModel() {
             try {
                 val response = RetrofitClient.api.getCursosPorInstitucion(idInstitucion)
 
-                println("Respuesta del backend: $response")
-
-                // Mapear la respuesta del backend a nuestro modelo UI
                 _cursos.value = response.map { cursoResponse ->
-                    val curso = Curso(
+                    Curso(
                         id = "${cursoResponse.grado}-${cursoResponse.grupo}-${cursoResponse.cohorte}",
                         grado = cursoResponse.grado,
                         grupo = cursoResponse.grupo,
@@ -50,10 +50,6 @@ class CoursesViewModel : ViewModel() {
                         nombreDocente = cursoResponse.docente?.nombre_completo,
                         fotoDocente = null
                     )
-
-                    println("Curso mapeado: ${curso.grado}-${curso.grupo}, Docente: ${curso.nombreDocente}, Estudiantes: ${curso.cantidadEstudiantes}")
-
-                    curso
                 }
 
                 println("Total cursos cargados: ${_cursos.value.size}")
@@ -75,7 +71,7 @@ class CoursesViewModel : ViewModel() {
         cohorte: Int,
         claveAcceso: String,
         idInstitucion: Int,
-        idDocente: Int? = null,
+        idDocente: String? = null,
         onResult: (Boolean, String?) -> Unit
     ) {
         viewModelScope.launch {
@@ -92,7 +88,6 @@ class CoursesViewModel : ViewModel() {
                 )
 
                 val response = RetrofitClient.api.crearCurso(request)
-
                 println("Curso creado: ${response.mensaje}")
                 onResult(true, response.mensaje)
 
@@ -114,41 +109,88 @@ class CoursesViewModel : ViewModel() {
 
     fun toggleHabilitado(curso: Curso, idInstitucion: Int) {
         viewModelScope.launch {
+            val estadoOriginal = curso.habilitado
+            val nuevoEstado = !estadoOriginal
+            
             try {
+                println("TOGGLE - Curso ${curso.id}: ${estadoOriginal} -> ${nuevoEstado}")
+
+                _cursos.value = _cursos.value.map { cursoActual ->
+                    if (cursoActual.id == curso.id) {
+                        val actualizado = cursoActual.copy(habilitado = nuevoEstado)
+                        println("   Optimista: ${actualizado.id} = ${actualizado.habilitado}")
+                        actualizado
+                    } else {
+                        cursoActual
+                    }
+                }.toList()
+                _refreshTrigger.value += 1
+
                 val request = ActualizarEstadoRequest(
                     grado = curso.grado,
                     grupo = curso.grupo,
                     cohorte = curso.cohorte,
                     id_institucion = idInstitucion,
-                    habilitado = !curso.habilitado
+                    habilitado = nuevoEstado
                 )
 
+                println("  Enviando request: habilitado=${nuevoEstado}")
                 val response = RetrofitClient.api.actualizarEstadoCurso(request)
+                val cursoActualizado = response.data
+                println("  Backend respondió: habilitado=${cursoActualizado.habilitado}")
 
-                // Actualizar localmente
-                _cursos.value = _cursos.value.map {
-                    if (it.id == curso.id) {
-                        it.copy(habilitado = response.habilitado)
+                // SIEMPRE sincronizar con la respuesta del backend
+                _cursos.value = _cursos.value.map { cursoActual ->
+                    if (cursoActual.id == curso.id) {
+                        val sincronizado = cursoActual.copy(habilitado = cursoActualizado.habilitado)
+                        println("   Sincronizado: ${sincronizado.id} = ${sincronizado.habilitado}")
+                        sincronizado
                     } else {
-                        it
+                        cursoActual
                     }
-                }
+                }.toList()
+                _refreshTrigger.value += 1
 
-                println("Estado actualizado para curso ${curso.id}: ${response.habilitado}")
+                // Verificación final
+                val cursoFinal = _cursos.value.find { it.id == curso.id }
+                println("  FINAL: ${cursoFinal?.id} = ${cursoFinal?.habilitado}")
 
             } catch (e: retrofit2.HttpException) {
+                println(" Error HTTP: ${e.code()} - ${e.message()}")
                 val errorBody = e.response()?.errorBody()?.string()
-                println("Error HTTP al cambiar estado: $errorBody")
-                _error.value = errorBody ?: e.message
+                println(" Error body: $errorBody")
+                
+                // Revertir al estado original en caso de error
+                _cursos.value = _cursos.value.map { cursoActual ->
+                    if (cursoActual.id == curso.id) {
+                        val revertido = cursoActual.copy(habilitado = estadoOriginal)
+                        println(" Revertido: ${revertido.id} = ${revertido.habilitado}")
+                        revertido
+                    } else {
+                        cursoActual
+                    }
+                }.toList()
+                _refreshTrigger.value += 1
+                
+                _error.value = errorBody ?: e.message()
             } catch (e: Exception) {
-                println("Error al cambiar estado: ${e.message}")
+                println("  Error general: ${e.message}")
                 e.printStackTrace()
+                
+                // Revertir al estado original en caso de error
+                _cursos.value = _cursos.value.map { cursoActual ->
+                    if (cursoActual.id == curso.id) {
+                        val revertido = cursoActual.copy(habilitado = estadoOriginal)
+                        println(" Revertido: ${revertido.id} = ${revertido.habilitado}")
+                        revertido
+                    } else {
+                        cursoActual
+                    }
+                }.toList()
+                _refreshTrigger.value += 1
+                
                 _error.value = e.message
             }
         }
     }
-
 }
-
-
-

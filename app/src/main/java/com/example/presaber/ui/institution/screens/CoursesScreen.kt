@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.presaber.ui.components.AddCard
 import com.example.presaber.ui.institution.viewmodel.CoursesViewModel
@@ -26,19 +27,28 @@ import com.example.presaber.ui.institution.viewmodel.CoursesViewModel
 @Composable
 fun CoursesScreen(
     idInstitucion: Int,
+    navController: NavController,
     viewModel: CoursesViewModel = viewModel()
 ) {
     val cursos by viewModel.cursos.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val refreshTrigger by viewModel.refreshTrigger.collectAsState()
 
-    var showCreateDialog by remember { mutableStateOf(false) }
+    val cursosList = remember(cursos, refreshTrigger) { cursos }
+
     var expandedCursoId by remember { mutableStateOf<String?>(null) }
 
-    // Cargar cursos al iniciar
     LaunchedEffect(idInstitucion) {
         viewModel.setIdInstitucion(idInstitucion)
         viewModel.cargarCursos(idInstitucion)
+    }
+
+    LaunchedEffect(refreshTrigger) {
+        println("UI recompuesta - Trigger: $refreshTrigger, Cursos: ${cursos.size}")
+        cursos.forEach { curso ->
+            println("   - ${curso.id}: habilitado=${curso.habilitado}")
+        }
     }
 
     Box(
@@ -47,22 +57,18 @@ fun CoursesScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Título
             item {
                 Text(
                     text = "Cursos",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 28.sp,
-                        color = Color(0xFF1E3A8A)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    textAlign = TextAlign.Center
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF485E92),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth() .padding(bottom = 16.dp, top = 8.dp)
                 )
             }
 
@@ -70,8 +76,9 @@ fun CoursesScreen(
             item {
                 AddCard(
                     text = "Crear nuevo curso",
-                    onClick = { showCreateDialog = true },
-                    circleColor = Color(0xFF5B7BC6)
+                    onClick = { 
+                        navController.navigate("CreateCourseScreen/$idInstitucion")
+                    }
                 )
             }
 
@@ -105,7 +112,10 @@ fun CoursesScreen(
                     }
                 }
             } else {
-                items(cursos) { curso ->
+                items(
+                    items = cursosList,
+                    key = { curso -> "${curso.id}-${curso.habilitado}-$refreshTrigger" }
+                ) { curso ->
                     CourseCard(
                         curso = curso,
                         isExpanded = expandedCursoId == curso.id,
@@ -119,29 +129,8 @@ fun CoursesScreen(
                 }
             }
 
-            // Espaciado final
-            item { Spacer(modifier = Modifier.height(16.dp)) }
-        }
 
-        // Dialog para crear curso
-        if (showCreateDialog) {
-            CreateCourseDialog(
-                onDismiss = { showCreateDialog = false },
-                onConfirm = { grado, grupo, cohorte, clave ->
-                    viewModel.crearCurso(
-                        grado = grado,
-                        grupo = grupo,
-                        cohorte = cohorte,
-                        claveAcceso = clave,
-                        idInstitucion = idInstitucion
-                    ) { success, message ->
-                        if (success) {
-                            showCreateDialog = false
-                            viewModel.cargarCursos(idInstitucion)
-                        }
-                    }
-                }
-            )
+            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }
@@ -154,6 +143,10 @@ fun CourseCard(
     onExpandClick: () -> Unit,
     onToggleHabilitado: () -> Unit
 ) {
+
+    val cardColor = if (curso.habilitado) Color(0xFF5B9EFF) else Color(0xFFE0E0E0)
+    val textColor = if (curso.habilitado) Color.White else Color(0xFF666666)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -161,15 +154,14 @@ fun CourseCard(
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (curso.habilitado) Color(0xFF5B9EFF) else Color(0xFFE0E0E0)
+            containerColor = cardColor
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
-        ) {
-            // Fila superior: Nombre y menú
+        ){
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -184,6 +176,7 @@ fun CourseCard(
                             fontSize = 20.sp
                         )
                     )
+                    Spacer(modifier= Modifier.height(2.dp))
                     Text(
                         text = "Cohorte ${curso.cohorte}",
                         style = MaterialTheme.typography.bodyMedium.copy(
@@ -201,7 +194,7 @@ fun CourseCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
             // Información del curso
             Row(
@@ -215,7 +208,7 @@ fun CourseCard(
                         imageVector = Icons.Default.People,
                         contentDescription = "Estudiantes",
                         tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(19.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
@@ -226,7 +219,6 @@ fun CourseCard(
                     )
                 }
 
-                // Toggle habilitado
                 Switch(
                     checked = curso.habilitado,
                     onCheckedChange = { onToggleHabilitado() },
@@ -239,7 +231,6 @@ fun CourseCard(
                 )
             }
 
-            // Docente
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -248,7 +239,8 @@ fun CourseCard(
                     modifier = Modifier
                         .size(20.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.3f))
+                        .background(Color.White.copy(alpha = 0.3f)),
+                    contentAlignment = Alignment.Center
                 ) {
                     if (curso.fotoDocente != null) {
                         AsyncImage(
@@ -265,7 +257,7 @@ fun CourseCard(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = curso.nombreDocente ?: "Sin docente asignado",
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -299,100 +291,6 @@ fun CourseCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CreateCourseDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String, Int, String) -> Unit
-) {
-    var grado by remember { mutableStateOf("") }
-    var grupo by remember { mutableStateOf("") }
-    var cohorte by remember { mutableStateOf("") }
-    var claveAcceso by remember { mutableStateOf("") }
-    var showError by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Crear Nuevo Curso",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E3A8A)
-                )
-            )
-        },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (showError) {
-                    Text(
-                        text = "Todos los campos son obligatorios",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-
-                OutlinedTextField(
-                    value = grado,
-                    onValueChange = { if (it.length <= 2) grado = it },
-                    label = { Text("Grado (ej: 11)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = grupo,
-                    onValueChange = { if (it.length <= 2) grupo = it },
-                    label = { Text("Grupo (ej: 01)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = cohorte,
-                    onValueChange = { if (it.length <= 4) cohorte = it },
-                    label = { Text("Cohorte (ej: 2025)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = claveAcceso,
-                    onValueChange = { if (it.length <= 20) claveAcceso = it },
-                    label = { Text("Clave de acceso") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (grado.isBlank() || grupo.isBlank() || cohorte.isBlank() || claveAcceso.isBlank()) {
-                        showError = true
-                    } else {
-                        val cohorteInt = cohorte.toIntOrNull()
-                        if (cohorteInt != null) {
-                            onConfirm(grado, grupo, cohorteInt, claveAcceso)
-                        }
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF5B7BC6)
-                )
-            ) {
-                Text("Crear")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
-}
 
 // Data class para los cursos
 data class Curso(

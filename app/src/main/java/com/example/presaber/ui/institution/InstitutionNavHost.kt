@@ -17,6 +17,7 @@ import com.example.presaber.layout.InstitutionLayout
 import com.example.presaber.ui.institution.components.questions.SubjectArea
 import com.example.presaber.ui.institution.components.questions.LocalNavController
 import com.example.presaber.ui.institution.screens.CoursesScreen
+import com.example.presaber.ui.institution.screens.CreateCourseScreen
 import com.example.presaber.ui.institution.screens.CreateQuestionScreen
 import com.example.presaber.ui.institution.screens.EditQuestionScreenWrapper
 import com.example.presaber.ui.institution.screens.HomeQuestion
@@ -72,7 +73,25 @@ fun InstitutionNavHost(idInstitucion: Int ) {
                         )
                     ) { backStackEntry ->
                         val idInstitucion = backStackEntry.arguments?.getInt("idInstitucion") ?: 1
-                        CoursesScreen(idInstitucion = idInstitucion)
+                        CoursesScreen(
+                            idInstitucion = idInstitucion,
+                            navController = navController
+                        )
+                    }
+                    
+                    composable(
+                        route = "CreateCourseScreen/{idInstitucion}",
+                        arguments = listOf(
+                            navArgument("idInstitucion") {
+                                type = NavType.IntType
+                            }
+                        )
+                    ) { backStackEntry ->
+                        val idInstitucion = backStackEntry.arguments?.getInt("idInstitucion") ?: 1
+                        CreateCourseScreen(
+                            navController = navController,
+                            idInstitucion = idInstitucion
+                        )
                     }
 
                     composable("GamificationScreen") { /* pantalla de gamificación */ }
