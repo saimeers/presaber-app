@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,15 +16,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.presaber.R
+import com.example.presaber.data.remote.Usuario
 import com.example.presaber.ui.layout.AccountDialog
-import com.example.presaber.ui.theme.PresaberTheme
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +31,8 @@ fun InstitutionLayout(
     selectedNavItem: Int = 0,
     onNavItemSelected: (Int) -> Unit = {},
     showAccountDialog: MutableState<Boolean> = remember { mutableStateOf(false) },
+    usuario: Usuario? = null,
+    onSignOut: () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
     val isInPreview = LocalInspectionMode.current
@@ -92,7 +90,6 @@ fun InstitutionLayout(
                 containerColor = Color(0xFFE2E7EE),
                 tonalElevation = 0.dp
             ) {
-
                 // Inicio
                 NavigationBarItem(
                     icon = {
@@ -126,7 +123,7 @@ fun InstitutionLayout(
                         selectedIconColor = Color(0xFF5B7BC6),
                         indicatorColor = Color(0xFFD8E2F7)
                     ),
-                    label =null
+                    label = null
                 )
 
                 // Preguntas
@@ -183,8 +180,7 @@ fun InstitutionLayout(
                     label = null
                 )
             }
-        }
-        ,
+        },
         content = { paddingValues ->
             Box(
                 modifier = Modifier
@@ -197,25 +193,10 @@ fun InstitutionLayout(
     )
 
     if (showAccountDialog.value) {
-        AccountDialog(onDismiss = { showAccountDialog.value = false })
-    }
-}
-
-@Preview
-@Composable
-fun InstitutionLayoutPreview(){
-    PresaberTheme {
-        InstitutionLayout(
-            selectedNavItem = 0,
-            onNavItemSelected = {},
-            showAccountDialog = remember { mutableStateOf(false) }, // Crea un estado de prueba
-            content = { paddingValues ->
-                // Pasa un contenido de ejemplo que use el padding del Scaffold
-                Text(
-                    text = "Este es el contenido de la vista previa",
-                    modifier = Modifier.padding(paddingValues)
-                )
-            }
+        AccountDialog(
+            usuario = usuario,
+            onDismiss = { showAccountDialog.value = false },
+            onSignOut = onSignOut
         )
     }
 }

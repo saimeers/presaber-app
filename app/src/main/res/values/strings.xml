@@ -4,4 +4,5 @@
     <string name="email_label">Correo electrónico</string>
     <string name="password_label">Contraseña</string>
     <string name="login_button">Ingresar</string>
+    <string name="default_web_client_id">691269667915-er1pba6ngvr61b3kv0bh9g3pgg23t6ar.apps.googleusercontent.com</string>
 </resources>

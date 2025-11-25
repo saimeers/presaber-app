@@ -7,13 +7,17 @@ import androidx.compose.ui.Modifier
 import com.example.presaber.data.remote.Reto
 import com.example.presaber.data.remote.RetrofitClient
 import com.example.presaber.data.remote.ResultadoData
+import com.example.presaber.data.remote.Usuario
 import com.example.presaber.ui.home.components.Quiz
 import com.example.presaber.ui.home.components.RetoList
 import com.example.presaber.ui.home.components.ResultQuiz
 import com.example.presaber.ui.layout.StudentLayout
 
 @Composable
-fun HomeEstudiante() {
+fun HomeEstudiante(
+    usuario: Usuario,
+    onSignOut: () -> Unit
+) {
     var selectedNavItem by remember { mutableStateOf(0) }
     val showAccountDialog = remember { mutableStateOf(false) }
 
@@ -44,7 +48,6 @@ fun HomeEstudiante() {
         }
     }
 
-    // ⬇️ IMPORTANTE: Quiz y Resultado en PANTALLA COMPLETA (sin StudentLayout)
     when {
         // Mostrar resultado en pantalla completa
         resultadoFinal != null -> {
@@ -62,7 +65,7 @@ fun HomeEstudiante() {
         currentReto != null -> {
             Quiz(
                 reto = currentReto!!,
-                idEstudiante = "1092396994",
+                idEstudiante = usuario.documento,
                 onFinish = { resultado ->
                     resultadoFinal = resultado
                 },
@@ -77,7 +80,9 @@ fun HomeEstudiante() {
             StudentLayout(
                 selectedNavItem = selectedNavItem,
                 onNavItemSelected = { index -> selectedNavItem = index },
-                showAccountDialog = showAccountDialog
+                showAccountDialog = showAccountDialog,
+                usuario = usuario,
+                onSignOut = onSignOut
             ) { paddingValues ->
                 Box(modifier = Modifier.padding(paddingValues)) {
                     if (selectedArea != null) {

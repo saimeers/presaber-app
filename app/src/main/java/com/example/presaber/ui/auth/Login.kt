@@ -1,6 +1,9 @@
 package com.example.presaber.ui.auth
 
+import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -14,15 +17,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.presaber.R
+import com.example.presaber.ui.auth.components.GoogleSignInButton
 import com.example.presaber.ui.auth.components.LoginForm
-import com.example.presaber.ui.auth.components.VerificarForm
 import com.example.presaber.ui.auth.components.RegisterForm
+import com.example.presaber.ui.auth.components.VerificarForm
 import com.example.presaber.ui.theme.PresaberTheme
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Login(
     onLoginClick: (String, String) -> Unit,
+    onGoogleSignInSuccess: (String) -> Unit = {}, // idToken
     loginError: String? = null
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -38,10 +46,48 @@ fun Login(
 
     val context = LocalContext.current
 
-    // Mostrar Toast cuando cambia loginError (ya viene desde MainNavigation)
+    // Google Sign-In Launcher
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        Log.d("Login", "Google Sign-In result received: ${result.resultCode}")
+        try {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            val account = task.getResult(ApiException::class.java)
+            val idToken = account?.idToken
+
+            Log.d("Login", "ID Token obtenido: ${idToken?.take(20)}...")
+
+            if (idToken != null) {
+                onGoogleSignInSuccess(idToken)
+            } else {
+                Toast.makeText(context, "Error al obtener token de Google", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: ApiException) {
+            Log.e("Login", "Error en Google Sign-In: ${e.statusCode} - ${e.message}")
+            if (e.statusCode != 12501) { // 12501 = Usuario canceló
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Configurar Google Sign-In
+    fun initiateGoogleSignIn() {
+        Log.d("Login", "Iniciando Google Sign-In...")
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(context.getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+
+        val googleSignInClient = GoogleSignIn.getClient(context, gso)
+        googleSignInClient.signOut() // Forzar selección de cuenta
+        googleSignInLauncher.launch(googleSignInClient.signInIntent)
+    }
+
+    // Mostrar Toast cuando cambia loginError
     LaunchedEffect(loginError) {
         loginError?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -62,6 +108,8 @@ fun Login(
                 modifier = Modifier.size(240.dp),
                 contentScale = ContentScale.Fit
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             SingleChoiceSegmentedButtonRow {
                 listOf("Log in", "Sign in").forEachIndexed { index, label ->
@@ -93,6 +141,29 @@ fun Login(
                         onLoginClick = { onLoginClick(email, password) },
                         loginError = loginError
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Divisor con texto "o"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        HorizontalDivider(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "o",
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = Color.Gray
+                        )
+                        HorizontalDivider(modifier = Modifier.weight(1f))
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Botón de Google Sign-In
+                    GoogleSignInButton(
+                        onClick = { initiateGoogleSignIn() }
+                    )
                 }
                 selectedTab == 1 && !accesoVerificado -> {
                     VerificarForm { idInst, grad, grup, coh ->
@@ -123,6 +194,7 @@ fun LoginPreview() {
     PresaberTheme {
         Login(
             onLoginClick = { _, _ -> },
+            onGoogleSignInSuccess = {},
             loginError = null
         )
     }

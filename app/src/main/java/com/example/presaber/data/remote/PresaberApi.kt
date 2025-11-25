@@ -275,7 +275,6 @@ data class ActualizarEstadoResponse(
     val data: CursoResponse
 )
 
-
 interface PresaberApi {
     @GET("api/institucion")
     suspend fun getInstituciones(): List<Institucion>
@@ -410,4 +409,9 @@ interface PresaberApi {
     suspend fun actualizarEstadoCurso(
         @Body request: ActualizarEstadoRequest
     ): ActualizarEstadoResponse
+
+    @GET("api/usuarios/firebase/{uid_firebase}")
+    suspend fun getUsuarioByUidFirebase(
+        @Path("uid_firebase") uidFirebase: String
+    ): Usuario
 }

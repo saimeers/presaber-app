@@ -1,7 +1,6 @@
 package com.example.presaber.ui.institution
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -14,19 +13,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.presaber.data.remote.Usuario
 import com.example.presaber.layout.InstitutionLayout
-import com.example.presaber.ui.institution.components.questions.SubjectArea
 import com.example.presaber.ui.institution.components.questions.LocalNavController
-import com.example.presaber.ui.institution.screens.CoursesScreen
-import com.example.presaber.ui.institution.screens.CreateCourseScreen
-import com.example.presaber.ui.institution.screens.CreateQuestionScreen
-import com.example.presaber.ui.institution.screens.EditQuestionScreenWrapper
-import com.example.presaber.ui.institution.screens.HomeQuestion
-import com.example.presaber.ui.institution.screens.QuestionsScreen
-import com.example.presaber.ui.institution.screens.TeachersScreen
+import com.example.presaber.ui.institution.screens.*
 
 @Composable
-fun InstitutionNavHost(idInstitucion: Int ) {
+fun InstitutionNavHost(
+    idInstitucion: Int,
+    usuario: Usuario,
+    onSignOut: () -> Unit
+) {
     val navController = rememberNavController()
     var selectedNavItem by remember { mutableStateOf(0) }
 
@@ -34,15 +31,17 @@ fun InstitutionNavHost(idInstitucion: Int ) {
         InstitutionLayout(
             selectedNavItem = selectedNavItem,
             onNavItemSelected = { index ->
-                selectedNavItem = index // Mantiene compatibilidad
+                selectedNavItem = index
                 when (index) {
                     0 -> navController.navigate("homeQuestion") { launchSingleTop = true }
                     1 -> navController.navigate("teachers/$idInstitucion") { launchSingleTop = true }
-                    2 -> navController.navigate("HomeQuestion") { launchSingleTop = true }
-                    3 -> navController.navigate("CoursesScreen/$idInstitucion") { launchSingleTop = true }
-                    4 -> navController.navigate("GamificationScreen") { launchSingleTop = true }
+                    2 -> navController.navigate("homeQuestion") { launchSingleTop = true }
+                    3 -> navController.navigate("courses/$idInstitucion") { launchSingleTop = true }
+                    4 -> navController.navigate("gamification") { launchSingleTop = true }
                 }
             },
+            usuario = usuario,
+            onSignOut = onSignOut,
             content = { paddingValues ->
                 NavHost(
                     navController = navController,
@@ -50,52 +49,50 @@ fun InstitutionNavHost(idInstitucion: Int ) {
                     modifier = Modifier.fillMaxSize()
                 ) {
                     composable("homeQuestion") {
-                        HomeQuestion(onNavigateToSubject = { subject ->
-                            navController.navigate("questions/${subject.title}/${subject.imageRes}")
-                        })
+                        HomeQuestion(
+                            onNavigateToSubject = { subject ->
+                                navController.navigate("questions/${subject.title}/${subject.imageRes}")
+                            }
+                        )
                     }
 
-                    composable("CreateQuestionScreen") { CreateQuestionScreen() }
+                    composable("CreateQuestionScreen") {
+                        CreateQuestionScreen()
+                    }
 
                     composable(
                         route = "teachers/{idInstitucion}",
                         arguments = listOf(navArgument("idInstitucion") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val idInst = backStackEntry.arguments?.getInt("idInstitucion") ?: 0
+                        val idInst = backStackEntry.arguments?.getInt("idInstitucion") ?: idInstitucion
                         TeachersScreen(idInstitucion = idInst)
                     }
 
                     composable(
-                        route = "CoursesScreen/{idInstitucion}",
-                        arguments = listOf(
-                            navArgument("idInstitucion") {
-                                type = NavType.IntType
-                            }
-                        )
+                        route = "courses/{idInstitucion}",
+                        arguments = listOf(navArgument("idInstitucion") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val idInstitucion = backStackEntry.arguments?.getInt("idInstitucion") ?: 1
+                        val idInst = backStackEntry.arguments?.getInt("idInstitucion") ?: idInstitucion
                         CoursesScreen(
-                            idInstitucion = idInstitucion,
+                            idInstitucion = idInst,
                             navController = navController
                         )
                     }
-                    
+
                     composable(
                         route = "CreateCourseScreen/{idInstitucion}",
-                        arguments = listOf(
-                            navArgument("idInstitucion") {
-                                type = NavType.IntType
-                            }
-                        )
+                        arguments = listOf(navArgument("idInstitucion") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val idInstitucion = backStackEntry.arguments?.getInt("idInstitucion") ?: 1
+                        val idInst = backStackEntry.arguments?.getInt("idInstitucion") ?: idInstitucion
                         CreateCourseScreen(
                             navController = navController,
-                            idInstitucion = idInstitucion
+                            idInstitucion = idInst
                         )
                     }
 
-                    composable("GamificationScreen") { /* pantalla de gamificación */ }
+                    composable("gamification") {
+                        // Pantalla de gamificación
+                    }
 
                     composable(
                         route = "questions/{areaName}/{areaIcon}",
@@ -125,9 +122,7 @@ fun InstitutionNavHost(idInstitucion: Int ) {
 
                     composable(
                         route = "editQuestion/{idPregunta}",
-                        arguments = listOf(
-                            navArgument("idPregunta") { type = NavType.IntType }
-                        )
+                        arguments = listOf(navArgument("idPregunta") { type = NavType.IntType })
                     ) { backStackEntry ->
                         val idPregunta = backStackEntry.arguments?.getInt("idPregunta")
                         if (idPregunta != null) {
@@ -136,7 +131,6 @@ fun InstitutionNavHost(idInstitucion: Int ) {
                     }
                 }
             }
-
         )
     }
 }

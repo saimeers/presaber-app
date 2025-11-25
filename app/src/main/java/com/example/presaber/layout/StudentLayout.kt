@@ -3,7 +3,6 @@ package com.example.presaber.ui.layout
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Home
@@ -25,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.presaber.R
+import com.example.presaber.data.remote.Usuario
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,6 +33,8 @@ fun StudentLayout(
     selectedNavItem: Int = 0,
     onNavItemSelected: (Int) -> Unit = {},
     showAccountDialog: MutableState<Boolean> = remember { mutableStateOf(false) },
+    usuario: Usuario? = null,
+    onSignOut: () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
     val isInPreview = LocalInspectionMode.current
@@ -145,14 +147,21 @@ fun StudentLayout(
     // Account Management Dialog
     if (showAccountDialog.value) {
         AccountDialog(
+            usuario = usuario,
             onDismiss = { showAccountDialog.value = false },
-            isInPreview = isInPreview // ✅ Pásalo aquí
+            onSignOut = onSignOut,
+            isInPreview = isInPreview
         )
     }
 }
 
 @Composable
-fun AccountDialog(onDismiss: () -> Unit, isInPreview: Boolean = false) {
+fun AccountDialog(
+    usuario: Usuario?,
+    onDismiss: () -> Unit,
+    onSignOut: () -> Unit,
+    isInPreview: Boolean = false
+) {
     val firebaseAuth = if (!isInPreview) FirebaseAuth.getInstance() else null
     val currentUser = firebaseAuth?.currentUser
 
@@ -208,7 +217,9 @@ fun AccountDialog(onDismiss: () -> Unit, isInPreview: Boolean = false) {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = currentUser?.displayName ?: "Saimer Saavedra",
+                    text = usuario?.let { "${it.nombre} ${it.apellido}" }
+                        ?: currentUser?.displayName
+                        ?: "Usuario",
                     fontSize = 20.sp,
                     color = Color(0xFF1A1B21),
                     fontWeight = FontWeight.SemiBold,
@@ -216,7 +227,7 @@ fun AccountDialog(onDismiss: () -> Unit, isInPreview: Boolean = false) {
                 )
 
                 Text(
-                    text = currentUser?.email ?: "saimer@example.com",
+                    text = usuario?.correo ?: currentUser?.email ?: "",
                     color = Color.Gray,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center
@@ -236,7 +247,7 @@ fun AccountDialog(onDismiss: () -> Unit, isInPreview: Boolean = false) {
                         icon = R.drawable.icon_logout,
                         text = "Cerrar sesión",
                         onClick = {
-                            firebaseAuth?.signOut()
+                            onSignOut()
                             onDismiss()
                         }
                     )
