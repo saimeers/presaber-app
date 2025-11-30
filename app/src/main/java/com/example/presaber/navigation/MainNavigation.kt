@@ -16,9 +16,12 @@ import com.example.presaber.viewmodel.AuthState
 import com.example.presaber.viewmodel.AuthViewModel
 
 @Composable
-fun MainNavigation() {
+fun MainNavigation(codigoSalaCompartido: String? = null) {
     val authViewModel: AuthViewModel = viewModel()
     val authState by authViewModel.authState.collectAsState()
+
+    // Guardar el código para usarlo después del login
+    var codigoPendiente by remember { mutableStateOf(codigoSalaCompartido) }
 
     when (val state = authState) {
         is AuthState.Loading -> {
@@ -28,26 +31,45 @@ fun MainNavigation() {
         }
 
         is AuthState.NotAuthenticated -> {
-            LoginScreen(authViewModel)
+            LoginScreen(
+                authViewModel = authViewModel,
+                codigoSalaCompartido = codigoPendiente
+            )
         }
 
         is AuthState.Authenticated -> {
             RoleBasedNavigation(
                 usuario = state.usuario,
-                onSignOut = { authViewModel.signOut() }
+                codigoSalaCompartido = codigoPendiente,
+                onSignOut = {
+                    codigoPendiente = null // Limpiar al cerrar sesión
+                    authViewModel.signOut()
+                }
             )
         }
 
         is AuthState.Error -> {
-            // Si hay error, mostrar login de nuevo
-            LoginScreen(authViewModel)
+            LoginScreen(
+                authViewModel = authViewModel,
+                codigoSalaCompartido = codigoPendiente
+            )
         }
     }
 }
 
 @Composable
-private fun LoginScreen(authViewModel: AuthViewModel) {
+private fun LoginScreen(
+    authViewModel: AuthViewModel,
+    codigoSalaCompartido: String? = null
+) {
     var loginErrorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Mostrar mensaje si viene de un deep link
+    LaunchedEffect(codigoSalaCompartido) {
+        if (codigoSalaCompartido != null) {
+            loginErrorMessage = "Inicia sesión para unirte a la sala $codigoSalaCompartido"
+        }
+    }
 
     Login(
         onLoginClick = { email, password ->
@@ -73,30 +95,33 @@ private fun LoginScreen(authViewModel: AuthViewModel) {
 @Composable
 private fun RoleBasedNavigation(
     usuario: com.example.presaber.data.remote.Usuario,
+    codigoSalaCompartido: String? = null,
     onSignOut: () -> Unit
 ) {
     when (UserRole.fromId(usuario.rol)) {
+
         UserRole.ESTUDIANTE -> {
             HomeEstudiante(
                 usuario = usuario,
+                codigoSalaCompartido = codigoSalaCompartido,
                 onSignOut = onSignOut
             )
         }
 
-        UserRole.DIRECTOR -> {
-            InstitutionNavHost(
-                idInstitucion = usuario.institucion,
-                usuario = usuario,
-                onSignOut = onSignOut
-            )
-        }
-
+        UserRole.DIRECTOR,
         UserRole.DOCENTE -> {
-            InstitutionNavHost(
-                idInstitucion = usuario.institucion,
-                usuario = usuario,
-                onSignOut = onSignOut
-            )
+            // Si es director/docente y viene con código de sala, mostrar mensaje
+            if (codigoSalaCompartido != null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Los enlaces de sala PvP son solo para estudiantes")
+                }
+            } else {
+                InstitutionNavHost(
+                    idInstitucion = usuario.institucion,
+                    usuario = usuario,
+                    onSignOut = onSignOut
+                )
+            }
         }
 
         UserRole.ADMINISTRADOR -> {

@@ -414,4 +414,66 @@ interface PresaberApi {
     suspend fun getUsuarioByUidFirebase(
         @Path("uid_firebase") uidFirebase: String
     ): Usuario
+
+    // Crear sala privada
+    @POST("api/salas/crear")
+    suspend fun crearSala(
+        @Body request: CrearSalaRequest
+    ): SalaResponse
+
+    // Unirse a sala mediante código
+    @POST("api/salas/unirse")
+    suspend fun unirseSala(
+        @Body request: UnirseSalaRequest
+    ): SalaResponse
+
+    // Obtener detalle de sala
+    @GET("api/salas/{idSala}")
+    suspend fun obtenerSala(
+        @Path("idSala") idSala: Int
+    ): SalaResponse
+
+    // Obtener preguntas de la sala
+    @GET("api/salas/{idSala}/preguntas")
+    suspend fun obtenerPreguntasSala(
+        @Path("idSala") idSala: Int
+    ): PreguntasSalaResponse
+
+    // Guardar respuesta en sala PvP
+    @POST("api/salas/respuesta")
+    suspend fun guardarRespuestaPvP(
+        @Body request: RespuestaPvPRequest
+    ): RespuestaPvPResponse
+
+    // Finalizar participación
+    @POST("api/salas/finalizar")
+    suspend fun finalizarPvP(
+        @Body request: FinalizarPvPRequest
+    ): FinalizarPvPResponse
+
+    // Obtener resultado final
+    @GET("api/salas/{idSala}/resultado")
+    suspend fun obtenerResultadoSala(
+        @Path("idSala") idSala: Int
+    ): ResultadoSalaResponse
+
+    // Obtener progreso en tiempo real
+    @GET("api/salas/{idSala}/progreso")
+    suspend fun obtenerProgresoSala(
+        @Path("idSala") idSala: Int
+    ): ProgresoResponse
+
+    // Obtener historial de salas
+    @GET("api/salas/historial/{idEstudiante}")
+    suspend fun obtenerHistorialSalas(
+        @Path("idEstudiante") idEstudiante: String
+    ): HistorialSalaResponse
+
+    // Contar preguntas por área y nivel
+    @GET("api/preguntas/cantidad")
+    suspend fun contarPreguntas(
+        @Query("id_area") idArea: Int,
+        @Query("nivel_dificultad") nivel: String
+    ): ContarPreguntasResponse
+
 }
