@@ -7,12 +7,16 @@
     <application
         android:allowBackup="true"
         android:label="Presaber"
+        android:icon="@mipmap/ic_logo"
+        android:roundIcon="@mipmap/ic_logo_round"
         android:theme="@style/Theme.Presaber">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            >
 
             <!-- LAUNCHER -->
             <intent-filter>

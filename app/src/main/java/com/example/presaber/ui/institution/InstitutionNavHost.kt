@@ -65,7 +65,23 @@ fun InstitutionNavHost(
                         arguments = listOf(navArgument("idInstitucion") { type = NavType.IntType })
                     ) { backStackEntry ->
                         val idInst = backStackEntry.arguments?.getInt("idInstitucion") ?: idInstitucion
-                        TeachersScreen(idInstitucion = idInst)
+                        TeachersScreen(
+                            idInstitucion = idInst,
+                            onAddTeacher = {
+                                navController.navigate("CreateTeacherScreen/$idInst")
+                            }
+                        )
+                    }
+
+                    composable(
+                        route = "CreateTeacherScreen/{idInstitucion}",
+                        arguments = listOf(navArgument("idInstitucion") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val idInst = backStackEntry.arguments?.getInt("idInstitucion") ?: idInstitucion
+                        CreateTeacherScreen(
+                            navController = navController,
+                            idInstitucion = idInst
+                        )
                     }
 
                     composable(

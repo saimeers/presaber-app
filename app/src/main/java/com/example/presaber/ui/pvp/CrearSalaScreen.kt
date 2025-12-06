@@ -1,5 +1,6 @@
 package com.example.presaber.ui.pvp
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -164,36 +165,193 @@ fun CrearSalaScreen(
         Spacer(Modifier.height(24.dp))
 
         // ---------------- DURACIÓN ----------------
-        Text("Duración (minutos)", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = duracionMinutos.toFloat(),
-            onValueChange = { duracionMinutos = it.toInt() },
-            valueRange = 1f..60f,
-            steps = 59
-        )
-        Text(
-            text = "$duracionMinutos minutos",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Text("Duración", fontWeight = FontWeight.SemiBold)
+
+        Spacer(Modifier.height(12.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF4A6FA5).copy(alpha = 0.1f)
+            ),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Display grande de la duración
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "$duracionMinutos",
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF4A6FA5)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = if (duracionMinutos == 1) "minuto" else "minutos",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF4A6FA5).copy(alpha = 0.7f),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // Slider mejorado
+                Slider(
+                    value = duracionMinutos.toFloat(),
+                    onValueChange = { duracionMinutos = it.toInt() },
+                    valueRange = 1f..60f,
+                    steps = 58,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color(0xFF4A6FA5),
+                        activeTrackColor = Color(0xFF4A6FA5),
+                        inactiveTrackColor = Color(0xFF4A6FA5).copy(alpha = 0.2f)
+                    )
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                // Labels de rango
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "1 min",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "60 min",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
 
         Spacer(Modifier.height(24.dp))
 
         // ---------------- CANTIDAD DE PREGUNTAS ----------------
         Text("Cantidad de preguntas", fontWeight = FontWeight.SemiBold)
 
+        Spacer(Modifier.height(8.dp))
+
         if (selectedArea == null) {
-            Text("Selecciona un área para ver la cantidad disponible")
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFF5F5F5)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "Selecciona un área para ver la cantidad disponible",
+                    modifier = Modifier.padding(16.dp),
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
+            }
         } else {
-            OutlinedTextField(
-                value = cantidadPreguntas.toString(),
-                onValueChange = { value ->
-                    val num = value.toIntOrNull() ?: 1
-                    cantidadPreguntas = num.coerceIn(1, cantidadDisponible)
-                },
-                label = { Text("Mínimo 1, máximo $cantidadDisponible") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Botón menos (-)
+                OutlinedIconButton(
+                    onClick = {
+                        if (cantidadPreguntas > 1) {
+                            cantidadPreguntas--
+                        }
+                    },
+                    enabled = cantidadPreguntas > 1,
+                    modifier = Modifier.size(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = IconButtonDefaults.outlinedIconButtonColors(
+                        contentColor = Color(0xFF4A6FA5),
+                        disabledContentColor = Color.Gray
+                    ),
+                    border = BorderStroke(
+                        width = 2.dp,
+                        color = if (cantidadPreguntas > 1) Color(0xFF4A6FA5) else Color.LightGray
+                    )
+                ) {
+                    Text(
+                        text = "−",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Display central con cantidad
+                Card(
+                    modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF4A6FA5).copy(alpha = 0.1f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "$cantidadPreguntas",
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF4A6FA5)
+                        )
+                        Text(
+                            text = "de $cantidadDisponible disponibles",
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // Botón más (+)
+                OutlinedIconButton(
+                    onClick = {
+                        if (cantidadPreguntas < cantidadDisponible) {
+                            cantidadPreguntas++
+                        }
+                    },
+                    enabled = cantidadPreguntas < cantidadDisponible,
+                    modifier = Modifier.size(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = IconButtonDefaults.outlinedIconButtonColors(
+                        contentColor = Color(0xFF4A6FA5),
+                        disabledContentColor = Color.Gray
+                    ),
+                    border = BorderStroke(
+                        width = 2.dp,
+                        color = if (cantidadPreguntas < cantidadDisponible) Color(0xFF4A6FA5) else Color.LightGray
+                    )
+                ) {
+                    Text(
+                        text = "+",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
 
         Spacer(Modifier.height(24.dp))

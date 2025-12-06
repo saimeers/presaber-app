@@ -41,14 +41,19 @@ object ValidationUtils {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun convertMillisToDate(millis: Long): String {
-        val localDate = Instant.ofEpochMilli(millis)
-            .atZone(ZoneId.of("UTC"))
-            .toLocalDate()
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-        return localDate.format(formatter)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val localDate = Instant.ofEpochMilli(millis)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate()
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+            localDate.format(formatter)
+        } else {
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            sdf.format(millis)
+        }
     }
+
 }
 
 data class PasswordValidation(

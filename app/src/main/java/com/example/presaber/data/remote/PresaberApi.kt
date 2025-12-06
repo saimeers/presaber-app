@@ -294,6 +294,10 @@ interface PresaberApi {
     @POST("api/usuarios/")
     suspend fun registrarUsuario(@Body body: RegistroRequest)
 
+    @POST("api/usuarios/verificar-correo")
+    suspend fun verificarCorreo(
+        @Body request: VerificarCorreoRequest
+    ): VerificarCorreoResponse
 
     // Áreas
     @GET("api/areas")
@@ -475,5 +479,10 @@ interface PresaberApi {
         @Query("id_area") idArea: Int,
         @Query("nivel_dificultad") nivel: String
     ): ContarPreguntasResponse
+
+    @POST("api/usuarios/docente")
+    suspend fun crearDocente(
+        @Body request: CrearDocenteRequest
+    ): CrearDocenteResponse
 
 }

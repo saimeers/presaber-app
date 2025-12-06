@@ -26,3 +26,13 @@ enum class UserRole(val id: Int) {
         fun fromId(id: Int): UserRole? = UserRole.entries.find { it.id == id }
     }
 }
+
+data class VerificarCorreoRequest(
+    val correo: String
+)
+
+data class VerificarCorreoResponse(
+    val success: Boolean,
+    val existe: Boolean,
+    val mensaje: String
+)

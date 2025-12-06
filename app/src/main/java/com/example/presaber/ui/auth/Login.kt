@@ -180,7 +180,15 @@ fun Login(
                         grado = grado,
                         grupo = grupo,
                         cohorte = cohorte,
-                        onCancel = { accesoVerificado = false }
+                        onCancel = {
+                            // Volver al inicio del formulario de registro
+                            accesoVerificado = false
+                        },
+                        onRegistroExitoso = { registeredEmail, registeredPassword ->
+                            // 🆕 Auto-login después del registro exitoso
+                            Log.d("Login", "Iniciando auto-login para: $registeredEmail")
+                            onLoginClick(registeredEmail, registeredPassword)
+                        }
                     )
                 }
             }
