@@ -2,6 +2,7 @@ package com.example.presaber.data.remote
 
 import com.example.presaber.R
 import com.example.presaber.ui.institution.components.teachers.Teacher
+import com.google.gson.annotations.SerializedName
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.*
@@ -85,7 +86,8 @@ data class Pregunta(
     val id_tema: Int?,
     val area: Area?,
     val tema: Tema?,
-    val opciones: List<Opcion>
+    @SerializedName("opciones", alternate = ["opcions"])
+    val opciones: List<Opcion> = emptyList()
 )
 
 data class Opcion(
@@ -195,7 +197,8 @@ data class PreguntaCompletaResponse(
     val id_tema: Int,
     val area: Area,
     val tema: Tema,
-    val opcions: List<Opcion>
+    @SerializedName("opciones", alternate = ["opcions"])
+    val opciones: List<Opcion> = emptyList()
 )
 
 data class TeacherResponse(
