@@ -7,6 +7,9 @@ data class Usuario(
     val nombre: String,
     val apellido: String,
     val correo: String,
+    val grado: String,
+    val grupo: String,
+    val cohorte: Int,
     @SerializedName("uid_firebase")
     val uidFirebase: String,
     @SerializedName("id_rol")

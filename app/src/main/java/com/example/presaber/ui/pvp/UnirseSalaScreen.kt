@@ -1,19 +1,25 @@
 package com.example.presaber.ui.pvp
 
-
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -24,14 +30,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presaber.data.remote.RetrofitClient
 import com.example.presaber.data.remote.UnirseSalaRequest
-import com.example.presaber.ui.theme.PresaberTheme
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+
+// Reutilizamos los colores del sistema de diseño
+private val AccentBlue = Color(0xFF2962FF)
+private val ErrorRed = Color(0xFFFF5252)
 
 @Composable
 fun UnirseSalaScreen(
@@ -48,7 +56,7 @@ fun UnirseSalaScreen(
     var isJoining by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Auto unirse si viene de link compartido
+    // Lógica de Auto-unirse (Mantenemos tu lógica intacta)
     LaunchedEffect(codigoCompartido) {
         if (!codigoCompartido.isNullOrBlank() && codigoCompartido.length == 7) {
             isJoining = true
@@ -62,11 +70,7 @@ fun UnirseSalaScreen(
                     errorMessage = response.message ?: "Error al unirse"
                 }
             } catch (e: HttpException) {
-                errorMessage = if (e.code() == 400) {
-                    "Sala no encontrada"
-                } else {
-                    "Error del servidor: ${e.code()}"
-                }
+                errorMessage = if (e.code() == 400) "Sala no encontrada" else "Error del servidor: ${e.code()}"
             } catch (e: Exception) {
                 errorMessage = "Error: ${e.message}"
             } finally {
@@ -75,169 +79,156 @@ fun UnirseSalaScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFDF8F5))
-            .padding(16.dp)
+            .background(Color.White)
     ) {
-        // Header
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(vertical = 16.dp)
+        // 1. Fondo Decorativo (Coherencia visual)
+        BackgroundBlobsInput()
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, "Atrás", tint = Color(0xFF1A1B21))
+            // 2. Header Limpio
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 16.dp, bottom = 32.dp)
+            ) {
+                IconButton(
+                    onClick = onBack,
+                    colors = IconButtonDefaults.iconButtonColors(containerColor = Color(0xFFF5F7FA))
+                ) {
+                    Icon(Icons.Rounded.ArrowBack, "Atrás", tint = TextDark)
+                }
             }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = "Únete a una sala",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1A1B21)
-            )
-        }
 
-        Spacer(Modifier.height(40.dp))
-
-        // Input código
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
-        ) {
             Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "Ingresa el código de la sala",
-                    fontSize = 16.sp,
-                    color = Color(0xFF5F6368),
-                    textAlign = TextAlign.Center
+                    text = "Ingresa el Código",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextDark
                 )
 
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(8.dp))
 
-                // Campo de código con formato ABC-1234
-                CodigoField(
+                Text(
+                    text = "Introduce el código que te compartieron\npara unirte a la partida.",
+                    fontSize = 16.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 22.sp
+                )
+
+                Spacer(Modifier.height(48.dp))
+
+                // 3. Input Moderno (Cajas flotantes)
+                CodigoInputModerno(
                     value = codigo,
                     onValueChange = { newValue ->
-                        // Filtrar solo letras y números, máximo 7 caracteres
                         val filtered = newValue.uppercase().filter { it.isLetterOrDigit() }
                         if (filtered.length <= 7) {
                             codigo = filtered
                             errorMessage = null
                         }
                     },
-                    focusRequester = focusRequester,
-                    onDone = {
-                        focusManager.clearFocus()
-                    }
+                    focusRequester = focusRequester
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(32.dp))
 
-                Text(
-                    "Formato: ABC-1234",
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
-            }
-        }
-
-        Spacer(Modifier.height(32.dp))
-
-        if (errorMessage != null) {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFFFEBEE)
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = errorMessage!!,
-                    color = Color(0xFFC62828),
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-            Spacer(Modifier.height(16.dp))
-        }
-
-        // Botones
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OutlinedButton(
-                onClick = onBack,
-                modifier = Modifier.weight(1f),
-                enabled = !isJoining
-            ) {
-                Text("Atrás")
-            }
-
-            Button(
-                onClick = {
-                    if (codigo.length != 7) {
-                        errorMessage = "Código incompleto. Formato: ABC-1234"
-                        return@Button
-                    }
-
-                    errorMessage = null
-                    isJoining = true
-
-                    scope.launch {
-                        try {
-                            val codigoFormateado = formatearCodigo(codigo)
-                            val response = RetrofitClient.api.unirseSala(
-                                UnirseSalaRequest(codigoFormateado, idEstudiante)
-                            )
-
-                            if (response.success) {
-                                onUnido(response.data.id_sala)
-                            } else {
-                                errorMessage = response.message ?: "Error al unirse a la sala"
-                            }
-                        } catch (e: HttpException) {
-                            errorMessage = when (e.code()) {
-                                400 -> "Sala no encontrada"
-                                404 -> "Sala no encontrada"
-                                else -> "Error del servidor: ${e.code()}"
-                            }
-                        } catch (e: Exception) {
-                            errorMessage = "Error de conexión: ${e.message}"
-                        } finally {
-                            isJoining = false
-                        }
-                    }
-                },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFF4A261)
-                ),
-                enabled = !isJoining && codigo.length == 7
-            ) {
-                if (isJoining) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = Color.White
+                // 4. Mensaje de Error Animado
+                AnimatedVisibility(visible = errorMessage != null) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = ErrorRed,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .padding(bottom = 16.dp)
+                            .background(ErrorRed.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                     )
-                } else {
-                    Text("Unirse")
                 }
+
+                Spacer(Modifier.weight(1f))
+
+                // 5. Botón de Acción Principal
+                Button(
+                    onClick = {
+                        if (codigo.length != 7) {
+                            errorMessage = "El código debe tener 7 caracteres"
+                            return@Button
+                        }
+                        errorMessage = null
+                        isJoining = true
+                        focusManager.clearFocus()
+
+                        scope.launch {
+                            try {
+                                val codigoFormateado = formatearCodigo(codigo)
+                                val response = RetrofitClient.api.unirseSala(
+                                    UnirseSalaRequest(codigoFormateado, idEstudiante)
+                                )
+                                if (response.success) {
+                                    onUnido(response.data.id_sala)
+                                } else {
+                                    errorMessage = response.message ?: "Error al unirse"
+                                }
+                            } catch (e: HttpException) {
+                                errorMessage = when (e.code()) {
+                                    400, 404 -> "Sala no encontrada o expirada"
+                                    else -> "Error del servidor: ${e.code()}"
+                                }
+                            } catch (e: Exception) {
+                                errorMessage = "Error de conexión"
+                            } finally {
+                                isJoining = false
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .clip(RoundedCornerShape(16.dp)), // Botón redondeado moderno
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentBlue,
+                        disabledContainerColor = Color(0xFFE0E0E0)
+                    ),
+                    enabled = !isJoining && codigo.length == 7
+                ) {
+                    if (isJoining) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White,
+                            strokeWidth = 3.dp
+                        )
+                    } else {
+                        Text(
+                            "Unirse a la Sala",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
             }
         }
     }
 }
 
 @Composable
-fun CodigoField(
+fun CodigoInputModerno(
     value: String,
     onValueChange: (String) -> Unit,
-    focusRequester: FocusRequester,
-    onDone: () -> Unit
+    focusRequester: FocusRequester
 ) {
     Box(
         modifier = Modifier
@@ -245,112 +236,108 @@ fun CodigoField(
             .clickable { focusRequester.requestFocus() },
         contentAlignment = Alignment.Center
     ) {
-        // Visualización de las cajas (3 letras + 4 números = 7 cajas + guion)
         Row(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Primera parte: 3 cajas (ABC)
-            for (i in 0 until 3) {
-                Box(
-                    modifier = Modifier
-                        .width(38.dp)
-                        .height(48.dp)
-                        .border(
-                            width = 2.dp,
-                            color = if (i < value.length)
-                                Color(0xFF4A6FA5)
-                            else
-                                Color(0xFFE0E0E0),
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .background(Color.White, RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = value.getOrNull(i)?.toString() ?: "",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1A1B21)
-                    )
-                }
+            // Grupo 1: ABC
+            InputGroup(value, 0, 3)
 
-                if (i < 2) {
-                    Spacer(modifier = Modifier.width(4.dp))
-                }
-            }
+            Spacer(Modifier.width(12.dp))
 
-            // Separador guion
-            Text(
-                text = "-",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1A1B21),
-                modifier = Modifier.padding(horizontal = 4.dp)
+            // Guion decorativo
+            Box(
+                modifier = Modifier
+                    .width(12.dp)
+                    .height(2.dp)
+                    .background(Color.LightGray, CircleShape)
             )
 
-            // Segunda parte: 4 cajas (1234)
-            for (i in 3 until 7) {
-                Box(
-                    modifier = Modifier
-                        .width(38.dp)
-                        .height(48.dp)
-                        .border(
-                            width = 2.dp,
-                            color = if (i < value.length)
-                                Color(0xFF4A6FA5)
-                            else
-                                Color(0xFFE0E0E0),
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .background(Color.White, RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = value.getOrNull(i)?.toString() ?: "",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1A1B21)
-                    )
-                }
+            Spacer(Modifier.width(12.dp))
 
-                if (i < 6) {
-                    Spacer(modifier = Modifier.width(4.dp))
-                }
-            }
+            // Grupo 2: 1234
+            InputGroup(value, 3, 7)
         }
 
-        // TextField invisible para capturar el input
+        // TextField Invisible
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier
                 .focusRequester(focusRequester)
                 .size(1.dp)
-                .offset(y = (-9999).dp),
-            textStyle = TextStyle(
-                color = Color.Transparent,
-                fontSize = 1.sp
-            ),
-            cursorBrush = SolidColor(Color.Transparent),
+                .alpha(0f), // Completamente invisible
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Characters,
                 keyboardType = KeyboardType.Text,
                 autoCorrect = false
-            )
+            ),
+            cursorBrush = SolidColor(Color.Transparent)
         )
     }
 
-    // Auto-focus al entrar
+    // Auto-focus al abrir
     LaunchedEffect(Unit) {
+        // Pequeño delay para asegurar que la UI esté lista
+        kotlinx.coroutines.delay(100)
         focusRequester.requestFocus()
     }
 }
 
-// Función auxiliar para formatear el código ABC1234 -> ABC-1234
+@Composable
+fun InputGroup(value: String, startIndex: Int, endIndex: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (i in startIndex until endIndex) {
+            val char = value.getOrNull(i)
+            val isFocused = value.length == i
+            val isFilled = char != null
+
+            // Diseño de cada cajita
+            Box(
+                modifier = Modifier
+                    .width(40.dp) // Más ancho para mejor legibilidad
+                    .height(56.dp) // Más alto (Estilo moderno)
+                    .border(
+                        width = if (isFocused || isFilled) 2.dp else 1.5.dp,
+                        color = if (isFocused) AccentBlue else if (isFilled) AccentBlue.copy(alpha = 0.5f) else Color(0xFFE0E0E0),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .background(
+                        color = if (isFocused) AccentBlue.copy(alpha = 0.05f) else Color.White,
+                        shape = RoundedCornerShape(12.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = char?.toString() ?: "",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextDark
+                )
+            }
+        }
+    }
+}
+
+// Fondo decorativo similar a las otras pantallas
+@Composable
+fun BackgroundBlobsInput() {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        drawCircle(
+            color = Color(0xFFE3F2FD).copy(alpha = 0.6f),
+            radius = size.width * 0.5f,
+            center = androidx.compose.ui.geometry.Offset(x = size.width * 0.9f, y = size.height * 0.1f)
+        )
+        drawCircle(
+            color = Color(0xFFFFF3E0).copy(alpha = 0.5f),
+            radius = size.width * 0.3f,
+            center = androidx.compose.ui.geometry.Offset(x = 0f, y = size.height * 0.85f)
+        )
+    }
+}
+
+// Utilidad (Sin cambios)
 private fun formatearCodigo(codigo: String): String {
     val limpio = codigo.replace("-", "")
     return if (limpio.length >= 4) {
@@ -359,3 +346,10 @@ private fun formatearCodigo(codigo: String): String {
         limpio
     }
 }
+
+// Extension function para alpha (si no usas Compose 1.7+ donde ya viene mejorado)
+fun Modifier.alpha(alpha: Float) = this.then(
+    Modifier.drawWithContent() {
+        if (alpha > 0) drawContent()
+    }
+)

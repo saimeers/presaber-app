@@ -1,32 +1,39 @@
 package com.example.presaber.ui.pvp
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Login
+import androidx.compose.material.icons.rounded.SportsEsports
+import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import com.example.presaber.R
 import com.example.presaber.data.remote.HistorialSala
 import com.example.presaber.data.remote.RetrofitClient
-import com.example.presaber.ui.theme.PresaberTheme
 import kotlinx.coroutines.launch
+
+// Colores del tema
+private val AccentBlue = Color(0xFF5685FF)
+private val AccentOrange = Color(0xFFFCB35A)
+private val TextGray = Color(0xFF757575)
+private val VictoryGreen = Color(0xFF38C771)
+private val DefeatRed = Color(0xFFFF5252)
 
 @Composable
 fun PvPHomeScreen(
@@ -34,7 +41,6 @@ fun PvPHomeScreen(
     onCrearSala: () -> Unit,
     onUnirseSala: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
     var historial by remember { mutableStateOf<List<HistorialSala>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
@@ -51,134 +57,142 @@ fun PvPHomeScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F9FA))
-            .padding(16.dp)
+            .background(Color.White)
     ) {
-        // Título
-        Text(
-            text = "Salas Privadas",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1A1B21),
-            modifier = Modifier.padding(vertical = 16.dp)
-        )
+        // Fondo decorativo
+        BackgroundBlobsHome()
 
-        // Botones principales
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Crear sala
-            ElevatedCard(
-                onClick = onCrearSala,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = Color(0xFF4A6FA5)
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Crear",
-                        tint = Color.White,
-                        modifier = Modifier.size(32.dp)
+                    ActionCard(
+                        title = "Crear Sala",
+                        subtitle = "Invita amigos",
+                        icon = Icons.Rounded.Add,
+                        color = AccentBlue,
+                        onClick = onCrearSala,
+                        modifier = Modifier.weight(1f)
                     )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "Crear sala",
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        "Compite contra otros",
-                        color = Color(0xFFE3E8F0),
-                        fontSize = 11.sp
+
+                    ActionCard(
+                        title = "Unirse",
+                        subtitle = "Con código",
+                        icon = Icons.Rounded.Login,
+                        color = AccentOrange,
+                        onClick = onUnirseSala,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
 
-            // Unirse a sala
-            ElevatedCard(
-                onClick = onUnirseSala,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = Color(0xFFF4A261)
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+            // 3. Título Historial
+            item {
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        Icons.Default.Login,
-                        contentDescription = "Unirse",
-                        tint = Color.White,
-                        modifier = Modifier.size(32.dp)
+                        imageVector = Icons.Rounded.History,
+                        contentDescription = null,
+                        tint = TextDark,
+                        modifier = Modifier.size(20.dp)
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
-                        "Unirse a sala",
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
+                        text = "Partidas Recientes",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextDark
                     )
-                    Text(
-                        "Entra en competiciones",
-                        color = Color(0xFFFFF5E1),
-                        fontSize = 11.sp
-                    )
+                }
+            }
+
+            // 4. Lista de Historial
+            if (isLoading) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = AccentBlue)
+                    }
+                }
+            } else if (historial.isEmpty()) {
+                item {
+                    EmptyStateHome()
+                }
+            } else {
+                items(historial) { sala ->
+                    HistorialItemClean(sala)
                 }
             }
         }
+    }
+}
 
-        Spacer(Modifier.height(24.dp))
+// --- Componentes UI ---
 
-        // Historial
-        Text(
-            text = "Historial",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF1A1B21),
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else if (historial.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "No hay historial de salas",
-                    color = Color.Gray,
-                    fontSize = 14.sp
+@Composable
+fun ActionCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    color: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(140.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = color,
+        shadowElevation = 8.dp
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Círculo decorativo en el fondo de la tarjeta
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.1f),
+                    radius = size.height * 0.8f,
+                    center = androidx.compose.ui.geometry.Offset(size.width, 0f)
                 )
             }
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.Start
             ) {
-                items(historial) { sala ->
-                    HistorialSalaCard(sala)
+                // Icono en burbuja blanca
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(imageVector = icon, contentDescription = null, tint = Color.White)
+                }
+
+                // Textos
+                Column {
+                    Text(
+                        text = title,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = subtitle,
+                        fontSize = 12.sp,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
                 }
             }
         }
@@ -186,92 +200,121 @@ fun PvPHomeScreen(
 }
 
 @Composable
-fun HistorialSalaCard(sala: HistorialSala) {
+fun HistorialItemClean(sala: HistorialSala) {
     val esVictoria = sala.resultado == "victoria"
-    val colorResultado = if (esVictoria) Color(0xFF4CAF50) else Color(0xFFE57373)
-    val textoResultado = if (esVictoria) "Victoria" else "Derrota"
+    val colorEstado = if (esVictoria) VictoryGreen else DefeatRed
 
-    ElevatedCard(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = Color.White
-        )
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        shadowElevation = 2.dp, // Sombra suave en lugar de borde
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF0F0F0))
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icono resultado
+            // Icono del área (Visual)
             Box(
                 modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(colorResultado.copy(alpha = 0.2f)),
+                    .size(48.dp)
+                    .background(colorEstado.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = if (esVictoria) "✓" else "✗",
-                    fontSize = 28.sp,
-                    color = colorResultado,
-                    fontWeight = FontWeight.Bold
+                Icon(
+                    imageVector = if (esVictoria) Icons.Rounded.EmojiEvents else Icons.Rounded.SportsEsports,
+                    contentDescription = null,
+                    tint = colorEstado,
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
             Spacer(Modifier.width(16.dp))
 
-            // Info sala
+            // Información Central
             Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = textoResultado,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorResultado
-                    )
-                    Text(
-                        text = sala.fecha_finalizacion.substring(0, 10),
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                }
-
-                Spacer(Modifier.height(4.dp))
-
                 Text(
-                    text = "Simulacro ${sala.area}",
-                    fontSize = 14.sp,
-                    color = Color(0xFF1A1B21)
+                    text = sala.area,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextDark
                 )
-
                 Text(
-                    text = "Correctas ${sala.preguntas_correctas}/${sala.total_preguntas}",
+                    text = sala.fecha_finalizacion.take(10),
                     fontSize = 12.sp,
-                    color = Color.Gray,
-                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    color = TextGray
+                )
+            }
+
+            // Puntaje a la derecha
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "${sala.preguntas_correctas}/${sala.total_preguntas}",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black,
+                    color = if (esVictoria) TextDark else TextGray
+                )
+                Text(
+                    text = if (esVictoria) "VICTORIA" else "DERROTA",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colorEstado,
+                    letterSpacing = 1.sp
                 )
             }
         }
     }
 }
 
-@Preview(
-    name = "PvP Home Preview",
-    showBackground = true,
-    showSystemUi = true
-)
 @Composable
-fun PreviewPvPHomeScreen() {
-    PresaberTheme {
-        PvPHomeScreen(
-            idEstudiante = "12345",
-            onCrearSala = {},
-            onUnirseSala = {}
+fun EmptyStateHome() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 40.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.SportsEsports,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = Color.LightGray
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = "Aún no tienes partidas",
+            color = Color.Gray,
+            fontSize = 16.sp
+        )
+        Text(
+            text = "¡Crea una sala para empezar!",
+            color = Color.LightGray,
+            fontSize = 14.sp
+        )
+    }
+}
+
+@Composable
+fun BackgroundBlobsHome() {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val width = size.width
+        val height = size.height
+
+        // Blob superior derecho
+        drawCircle(
+            color = Color(0xFFE3F2FD).copy(alpha = 0.5f),
+            radius = width * 0.6f,
+            center = androidx.compose.ui.geometry.Offset(width * 1.2f, height * 0.1f)
+        )
+
+        // Blob inferior izquierdo
+        drawCircle(
+            color = Color(0xFFFFF3E0).copy(alpha = 0.5f),
+            radius = width * 0.4f,
+            center = androidx.compose.ui.geometry.Offset(0f, height * 0.9f)
         )
     }
 }

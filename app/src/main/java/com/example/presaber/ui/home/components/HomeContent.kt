@@ -32,7 +32,8 @@ data class SubjectArea(
 
 @Composable
 fun HomeContent(
-    onSubjectClick: (SubjectArea) -> Unit = {}
+    onSubjectClick: (SubjectArea) -> Unit = {},
+    onUnirseSimulacroClick: () -> Unit
 ) {
     var showFabMenu by remember { mutableStateOf(false) }
 
@@ -117,7 +118,10 @@ fun HomeContent(
                 // Menu items
                 if (showFabMenu) {
                     SmallFloatingActionButton(
-                        onClick = { /* Acción Unirse */ },
+                        onClick = {
+                            showFabMenu = false
+                            onUnirseSimulacroClick()
+                        },
                         containerColor = Color(0xFFADC3FE),
                         contentColor = Color.Black
                     ) {

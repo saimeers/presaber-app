@@ -488,4 +488,83 @@ interface PresaberApi {
         @Body request: CrearDocenteRequest
     ): CrearDocenteResponse
 
+    // Crear simulacro grupal
+    @POST("api/simulacro-grupal/crear")
+    suspend fun crearSimulacro(
+        @Body request: CrearSimulacroRequest
+    ): SimulacroResponse
+
+    // Unirse a simulacro
+    @POST("api/simulacro-grupal/{id}/unirse")
+    suspend fun unirseASimulacro(
+        @Path("id") idSimulacro: Int,
+        @Body body: Map<String, String> // { "id_estudiante": "..." }
+    ): SimulacroResponse
+
+    // Iniciar simulacro (Docente)
+    @POST("api/simulacro-grupal/{id}/iniciar")
+    suspend fun iniciarSimulacro(
+        @Path("id") idSimulacro: Int,
+        @Body request: IniciarSimulacroRequest
+    ): SimulacroResponse
+
+    // Obtener detalle del simulacro
+    @GET("api/simulacro-grupal/{id}")
+    suspend fun obtenerSimulacro(
+        @Path("id") idSimulacro: Int
+    ): SimulacroResponse
+
+    // Obtener preguntas del simulacro
+    @GET("api/simulacro-grupal/{id}/preguntas")
+    suspend fun obtenerPreguntasSimulacro(
+        @Path("id") idSimulacro: Int
+    ): PreguntasSimulacroResponse
+
+    // Guardar respuesta
+    @POST("api/simulacro-grupal/{id}/respuesta")
+    suspend fun guardarRespuestaSimulacro(
+        @Path("id") idSimulacro: Int,
+        @Body request: GuardarRespuestaSimulacroRequest
+    ): RespuestaSimulacroResponse
+
+    // Finalizar participación de un estudiante
+    @POST("api/simulacro-grupal/{id}/finalizar-participacion")
+    suspend fun finalizarParticipacionSimulacro(
+        @Path("id") idSimulacro: Int,
+        @Body request: FinalizarParticipacionSimulacroRequest
+    ): FinalizarParticipacionSimulacroResponse
+
+    // Finalizar simulacro completo (Docente)
+    @POST("api/simulacro-grupal/{id}/finalizar")
+    suspend fun finalizarSimulacro(
+        @Path("id") idSimulacro: Int,
+        @Body request: FinalizarSimulacroRequest
+    ): ResultadoSimulacroResponse
+
+    // Obtener resultado final
+    @GET("api/simulacro-grupal/{id}/resultado")
+    suspend fun obtenerResultadoSimulacro(
+        @Path("id") idSimulacro: Int
+    ): ResultadoSimulacroResponse
+
+    // Obtener progreso en tiempo real
+    @GET("api/simulacro-grupal/{id}/progreso")
+    suspend fun obtenerProgresoSimulacro(
+        @Path("id") idSimulacro: Int
+    ): ProgresoSimulacroResponse
+
+    // Obtener simulacros de un curso
+    @GET("api/simulacro-grupal/curso/{grado}/{grupo}/{cohorte}/{id_institucion}")
+    suspend fun obtenerSimulacrosCurso(
+        @Path("grado") grado: String,
+        @Path("grupo") grupo: String,
+        @Path("cohorte") cohorte: Int,
+        @Path("id_institucion") idInstitucion: Int
+    ): SimulacrosResumenResponse
+
+    // Obtener historial de un estudiante
+    @GET("api/simulacro-grupal/historial/{id_estudiante}")
+    suspend fun obtenerHistorialSimulacroEstudiante(
+        @Path("id_estudiante") idEstudiante: String
+    ): HistorialSimulacroResponse
 }

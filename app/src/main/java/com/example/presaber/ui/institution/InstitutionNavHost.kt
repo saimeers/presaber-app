@@ -1,22 +1,33 @@
 package com.example.presaber.ui.institution
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.presaber.data.remote.RetrofitClient
 import com.example.presaber.data.remote.Usuario
 import com.example.presaber.layout.InstitutionLayout
 import com.example.presaber.ui.institution.components.questions.LocalNavController
 import com.example.presaber.ui.institution.screens.*
+import com.example.presaber.ui.simulacro.*
+import com.example.presaber.ui.simulacro.teacher.CrearSimulacroScreen
+import com.example.presaber.ui.simulacro.teacher.SimulacroEsperaScreen
+import com.example.presaber.ui.simulacro.teacher.SimulacroHomeScreen
+import com.example.presaber.ui.simulacro.teacher.SimulacroPodioScreen
+import com.example.presaber.ui.simulacro.teacher.SimulacroProgresoScreen
 
 @Composable
 fun InstitutionNavHost(
@@ -48,6 +59,8 @@ fun InstitutionNavHost(
                     startDestination = "homeQuestion",
                     modifier = Modifier.fillMaxSize()
                 ) {
+                    // ==================== PANTALLAS EXISTENTES ====================
+
                     composable("homeQuestion") {
                         HomeQuestion(
                             onNavigateToSubject = { subject ->
@@ -106,10 +119,6 @@ fun InstitutionNavHost(
                         )
                     }
 
-                    composable("gamification") {
-                        // Pantalla de gamificación
-                    }
-
                     composable(
                         route = "questions/{areaName}/{areaIcon}",
                         arguments = listOf(
@@ -143,6 +152,133 @@ fun InstitutionNavHost(
                         val idPregunta = backStackEntry.arguments?.getInt("idPregunta")
                         if (idPregunta != null) {
                             EditQuestionScreenWrapper(idPregunta = idPregunta)
+                        }
+                    }
+
+                    // ==================== GAMIFICACIÓN / SIMULACRO ====================
+
+                    composable("gamification") {
+                        SimulacroHomeScreen(
+                            idDocente = usuario.documento,
+                            grado = usuario.grado ?: "",
+                            grupo = usuario.grupo ?: "",
+                            cohorte = usuario.cohorte ?: 0,
+                            idInstitucion = idInstitucion,
+                            onCrearSimulacro = {
+                                navController.navigate("crearSimulacro")
+                            },
+                            onVerSimulacro = { idSimulacro ->
+                                navController.navigate("simulacroDetalle/$idSimulacro")
+                            }
+                        )
+                    }
+
+                    // Crear simulacro
+                    composable("crearSimulacro") {
+                        CrearSimulacroScreen(
+                            idDocente = usuario.documento,
+                            grado = usuario.grado ?: "",
+                            grupo = usuario.grupo ?: "",
+                            cohorte = usuario.cohorte ?: 0,
+                            idInstitucion = idInstitucion,
+                            onSimulacroCreado = { idSimulacro ->
+                                navController.navigate("simulacroEspera/$idSimulacro") {
+                                    popUpTo("gamification")
+                                }
+                            },
+                            onBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+
+                    // Sala de espera
+                    composable(
+                        route = "simulacroEspera/{idSimulacro}",
+                        arguments = listOf(navArgument("idSimulacro") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val idSimulacro = backStackEntry.arguments?.getInt("idSimulacro") ?: 0
+                        SimulacroEsperaScreen(
+                            idSimulacro = idSimulacro,
+                            idDocente = usuario.documento,
+                            onIniciar = {
+                                navController.navigate("simulacroProgreso/$idSimulacro") {
+                                    popUpTo("gamification")
+                                }
+                            }
+                        )
+                    }
+
+                    // Progreso en curso
+                    composable(
+                        route = "simulacroProgreso/{idSimulacro}",
+                        arguments = listOf(navArgument("idSimulacro") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val idSimulacro = backStackEntry.arguments?.getInt("idSimulacro") ?: 0
+                        SimulacroProgresoScreen (
+                            idSimulacro = idSimulacro,
+                            idDocente = usuario.documento,
+                            onFinalizar = {
+                                navController.navigate("simulacroPodio/$idSimulacro") {
+                                    popUpTo("gamification")
+                                }
+                            }
+                        )
+                    }
+
+                    // Podio final
+                    composable(
+                        route = "simulacroPodio/{idSimulacro}",
+                        arguments = listOf(navArgument("idSimulacro") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val idSimulacro = backStackEntry.arguments?.getInt("idSimulacro") ?: 0
+                        SimulacroPodioScreen(
+                            idSimulacro = idSimulacro,
+                            onAceptar = {
+                                navController.navigate("gamification") {
+                                    popUpTo("gamification") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+
+                    // Detalle de simulacro (redirecciona según estado)
+                    composable(
+                        route = "simulacroDetalle/{idSimulacro}",
+                        arguments = listOf(navArgument("idSimulacro") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val idSimulacro = backStackEntry.arguments?.getInt("idSimulacro") ?: 0
+
+                        // Obtener el estado del simulacro y redirigir a la pantalla correcta
+                        LaunchedEffect(idSimulacro) {
+                            try {
+                                val response = RetrofitClient.api.obtenerSimulacro(idSimulacro)
+                                if (response.success) {
+                                    when (response.data.estado) {
+                                        "esperando" -> navController.navigate("simulacroEspera/$idSimulacro") {
+                                            popUpTo("gamification")
+                                        }
+                                        "en_curso" -> navController.navigate("simulacroProgreso/$idSimulacro") {
+                                            popUpTo("gamification")
+                                        }
+                                        "finalizado" -> navController.navigate("simulacroPodio/$idSimulacro") {
+                                            popUpTo("gamification")
+                                        }
+                                        else -> navController.popBackStack()
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                navController.popBackStack()
+                            }
+                        }
+
+                        // Mostrar loading mientras se determina el estado
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
                     }
                 }

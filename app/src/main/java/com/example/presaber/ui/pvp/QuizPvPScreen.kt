@@ -1,33 +1,42 @@
 package com.example.presaber.ui.pvp
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.rounded.AccessTime
+import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.presaber.data.remote.*
-import com.example.presaber.ui.home.components.QuestionCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
+
+// Colores consistentes
+private val MyColor = Color(0xFF5685FF)
+private val RivalColor = Color(0xFFFF7043)
 
 @Composable
 fun QuizPvPScreen(
@@ -35,12 +44,19 @@ fun QuizPvPScreen(
     idEstudiante: String,
     onFinish: () -> Unit
 ) {
+    // Evitar salir por error
+    BackHandler {}
+
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
     var preguntas by remember { mutableStateOf<List<PreguntaSala>?>(null) }
     var duracionMinutos by remember { mutableStateOf(20) }
-    var progreso by remember { mutableStateOf<List<ProgresoJugador>>(emptyList()) }
+
+    // Estado del rival (Progreso)
+    var rival by remember { mutableStateOf<ProgresoJugador?>(null) }
+    var miProgresoActual by remember { mutableStateOf(0) } // Para la barra local
+
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var currentIndex by remember { mutableStateOf(0) }
@@ -49,6 +65,7 @@ fun QuizPvPScreen(
     var submitting by remember { mutableStateOf(false) }
     var timerRunning by remember { mutableStateOf(false) }
 
+    // Helpers de tiempo
     fun formatDuration(sec: Long): String {
         val h = TimeUnit.SECONDS.toHours(sec)
         val m = TimeUnit.SECONDS.toMinutes(sec) % 60
@@ -56,16 +73,7 @@ fun QuizPvPScreen(
         return String.format("%02d:%02d:%02d", h, m, s)
     }
 
-    fun formatTiempoRestante(sec: Long, duracionMin: Int): String {
-        val tiempoLimiteSegundos = duracionMin * 60L
-        val restante = tiempoLimiteSegundos - sec
-        if (restante <= 0) return "00:00"
-        val m = restante / 60
-        val s = restante % 60
-        return String.format("%02d:%02d", m, s)
-    }
-
-    // Cargar preguntas
+    // 1. Cargar preguntas
     LaunchedEffect(Unit) {
         try {
             val resp = RetrofitClient.api.obtenerPreguntasSala(idSala)
@@ -83,7 +91,7 @@ fun QuizPvPScreen(
         }
     }
 
-    // Cronómetro
+    // 2. Cronómetro
     LaunchedEffect(timerRunning, duracionMinutos) {
         while (timerRunning) {
             delay(1000L)
@@ -103,36 +111,149 @@ fun QuizPvPScreen(
         }
     }
 
-    // Polling del progreso
+    // 3. Polling del Rival (PvP)
     LaunchedEffect(idSala) {
         while (true) {
-                try {
-                    val response = RetrofitClient.api.obtenerProgresoSala(idSala)
-                    if (response.success) {
-                        progreso = response.data
+            try {
+                val response = RetrofitClient.api.obtenerProgresoSala(idSala)
+                if (response.success) {
+                    val lista = response.data
+                    // Encontrar al rival (el que no soy yo)
+                    val oponenteData = lista.find { it.id_estudiante != idEstudiante }
+                    if (oponenteData != null) {
+                        rival = oponenteData
                     }
-                } catch (e: Exception) { }
-            delay(500)
+
+                    // Actualizar mi progreso real desde el backend por si acaso
+                    val miData = lista.find { it.id_estudiante == idEstudiante }
+                    if (miData != null) {
+                        // Sincronizar visualmente
+                        // miProgresoActual = miData.preguntas_respondidas
+                    }
+                }
+            } catch (e: Exception) { }
+            delay(2000) // Más rápido en PvP (2s)
         }
     }
 
+    // Scroll al top al cambiar de pregunta
     LaunchedEffect(currentIndex) {
         scrollState.scrollTo(0)
     }
 
-    Surface(modifier = Modifier.fillMaxSize()) {
+    if (isLoading) {
+        Box(Modifier.fillMaxSize(), Alignment.Center) {
+            CircularProgressIndicator(color = MyColor)
+        }
+        return
+    }
+
+    if (errorMessage != null) {
+        Box(Modifier.fillMaxSize(), Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(errorMessage!!, color = MaterialTheme.colorScheme.error)
+                Button(onClick = onFinish) { Text("Salir") }
+            }
+        }
+        return
+    }
+
+    if (preguntas.isNullOrEmpty()) return
+
+    val preguntaActual = preguntas!![currentIndex]
+    val totalPreguntas = preguntas!!.size
+    val tiempoRestanteSegundos = (duracionMinutos * 60L - elapsedSeconds).toInt()
+
+    Scaffold(
+        topBar = {
+            Column {
+                // Header PvP (Igual al simulacro)
+                PvPRivalHeader(
+                    miProgresoActual = currentIndex, // Usamos el índice local para respuesta instantánea
+                    rival = rival,
+                    totalPreguntas = totalPreguntas
+                )
+
+                // Timer Compacto debajo del header
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    PvPTimer(tiempoRestanteSegundos)
+                }
+            }
+        },
+        bottomBar = {
+            Button(
+                onClick = {
+                    val opcion = selectedOptionId ?: return@Button
+                    if (submitting) return@Button
+
+                    submitting = true
+                    scope.launch {
+                        try {
+                            RetrofitClient.api.guardarRespuestaPvP(
+                                RespuestaPvPRequest(
+                                    id_sala = idSala,
+                                    id_estudiante = idEstudiante,
+                                    id_pregunta = preguntaActual.id_pregunta,
+                                    id_opcion = opcion,
+                                    tiempo_respuesta = 0
+                                )
+                            )
+
+                            if (currentIndex == preguntas!!.size - 1) {
+                                timerRunning = false
+                                RetrofitClient.api.finalizarPvP(
+                                    FinalizarPvPRequest(idSala, idEstudiante, formatDuration(elapsedSeconds))
+                                )
+                                onFinish()
+                            } else {
+                                selectedOptionId = null
+                                currentIndex += 1
+                            }
+                        } catch (e: Exception) {
+                            errorMessage = "Error: ${e.message}"
+                        } finally {
+                            submitting = false
+                        }
+                    }
+                },
+                enabled = selectedOptionId != null && !submitting,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MyColor,
+                    disabledContainerColor = Color(0xFFE0E0E0)
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                if (submitting) {
+                    CircularProgressIndicator(Modifier.size(24.dp), color = Color.White)
+                } else {
+                    Text(
+                        text = if (currentIndex == totalPreguntas - 1) "Finalizar PvP" else "Siguiente",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
+                .padding(padding)
                 .fillMaxSize()
                 .padding(16.dp)
+                .verticalScroll(scrollState)
         ) {
-            // Header con temporizador mejorado
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedButton(
+            // Botón Rendirse (Discreto arriba)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(
                     onClick = {
                         timerRunning = false
                         scope.launch {
@@ -144,151 +265,75 @@ fun QuizPvPScreen(
                             onFinish()
                         }
                     },
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFFE53935)
-                    ),
-                    enabled = !submitting,
-                    shape = RoundedCornerShape(12.dp)
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFE53935))
                 ) {
-                    Text("Rendirse", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Icon(Icons.Rounded.Flag, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Rendirse", fontSize = 12.sp)
                 }
+            }
 
-                // Temporizador mejorado
-                TemporizadorModerno(
-                    tiempoRestante = formatTiempoRestante(elapsedSeconds, duracionMinutos),
-                    elapsedSeconds = elapsedSeconds,
-                    duracionMinutos = duracionMinutos
+            Spacer(Modifier.height(8.dp))
+
+            // Enunciado
+            Text(
+                text = "Pregunta ${currentIndex + 1}",
+                color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Medium
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = preguntaActual.enunciado ?: "Sin enunciado",
+                fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark,
+                lineHeight = 24.sp
+            )
+
+            if (preguntaActual.imagen != null) {
+                Spacer(Modifier.height(16.dp))
+                AsyncImage(
+                    model = preguntaActual.imagen,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 250.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Fit
                 )
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(24.dp))
 
-            // Barra de progreso de jugadores (mejorada)
-            BarraProgresoJugadoresMejorada(
-                progreso = progreso,
-                idEstudiante = idEstudiante,
-                totalPreguntas = preguntas?.size ?: 0
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            when {
-                isLoading -> {
-                    Box(Modifier.fillMaxSize(), Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFF4A6FA5))
-                    }
-                }
-
-                errorMessage != null -> {
-                    Box(Modifier.fillMaxSize(), Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(errorMessage!!, color = MaterialTheme.colorScheme.error)
-                            Spacer(Modifier.height(16.dp))
-                            Button(onClick = onFinish) { Text("Volver") }
-                        }
-                    }
-                }
-
-                preguntas == null || preguntas!!.isEmpty() -> {
-                    Box(Modifier.fillMaxSize(), Alignment.Center) {
-                        Text("No hay preguntas disponibles")
-                    }
-                }
-
-                else -> {
-                    val pregunta = preguntas!![currentIndex]
-
-                    // Indicador de pregunta actual
+            // Opciones
+            preguntaActual.opciones.forEach { opcion ->
+                val isSelected = selectedOptionId == opcion.id_opcion
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp)
+                        .clickable { if(!submitting) selectedOptionId = opcion.id_opcion },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSelected) MyColor.copy(alpha = 0.1f) else Color.White
+                    ),
+                    border = BorderStroke(
+                        width = if (isSelected) 2.dp else 1.dp,
+                        color = if (isSelected) MyColor else Color(0xFFE0E0E0)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        RadioButton(
+                            selected = isSelected,
+                            onClick = { if(!submitting) selectedOptionId = opcion.id_opcion },
+                            colors = RadioButtonDefaults.colors(selectedColor = MyColor)
+                        )
+                        Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "Pregunta ${currentIndex + 1} de ${preguntas!!.size}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1A1B21)
+                            text = opcion.texto_opcion ?: "Ver imagen",
+                            fontSize = 16.sp,
+                            color = if (isSelected) MyColor else TextDark
                         )
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-
-                    // Pregunta con scroll
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .verticalScroll(scrollState)
-                    ) {
-                        QuestionCard(
-                            pregunta = convertirAPregunta(pregunta),
-                            selectedOptionId = selectedOptionId,
-                            onSelect = { if (!submitting) selectedOptionId = it }
-                        )
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-
-                    // Botón de siguiente/finalizar centrado
-                    Button(
-                        onClick = {
-                            val opcion = selectedOptionId ?: return@Button
-                            if (submitting) return@Button
-
-                            submitting = true
-                            scope.launch {
-                                try {
-                                    RetrofitClient.api.guardarRespuestaPvP(
-                                        RespuestaPvPRequest(
-                                            id_sala = idSala,
-                                            id_estudiante = idEstudiante,
-                                            id_pregunta = pregunta.id_pregunta,
-                                            id_opcion = opcion,
-                                            tiempo_respuesta = 0
-                                        )
-                                    )
-
-                                    if (currentIndex == preguntas!!.size - 1) {
-                                        timerRunning = false
-                                        RetrofitClient.api.finalizarPvP(
-                                            FinalizarPvPRequest(idSala, idEstudiante, formatDuration(elapsedSeconds))
-                                        )
-                                        delay(500)
-                                        onFinish()
-                                    } else {
-                                        selectedOptionId = null
-                                        currentIndex += 1
-                                    }
-                                } catch (e: Exception) {
-                                    errorMessage = "Error: ${e.message}"
-                                } finally {
-                                    submitting = false
-                                }
-                            }
-                        },
-                        enabled = selectedOptionId != null && !submitting,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4A6FA5),
-                            disabledContainerColor = Color(0xFFBDBDBD)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        if (submitting) {
-                            CircularProgressIndicator(
-                                Modifier.size(24.dp),
-                                color = Color.White,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text(
-                                text = if (currentIndex == preguntas!!.size - 1) "Finalizar" else "Siguiente",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
                     }
                 }
             }
@@ -296,226 +341,142 @@ fun QuizPvPScreen(
     }
 }
 
-@Composable
-fun TemporizadorModerno(
-    tiempoRestante: String,
-    elapsedSeconds: Long,
-    duracionMinutos: Int
-) {
-    val tiempoLimiteSegundos = duracionMinutos * 60L
-    val esCritico = elapsedSeconds >= (tiempoLimiteSegundos - 60)
+// --- Componentes UI Reutilizados del diseño anterior ---
 
-    // Animación de pulso cuando es crítico
-    val scale by animateFloatAsState(
-        targetValue = if (esCritico) 1.05f else 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(500),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "scale"
+@Composable
+fun PvPRivalHeader(
+    miProgresoActual: Int,
+    rival: ProgresoJugador?, // Usamos el objeto de progreso de PvP
+    totalPreguntas: Int
+) {
+    val rivalProgreso = rival?.preguntas_respondidas ?: 0
+
+    val miPorcentaje by animateFloatAsState(
+        targetValue = if (totalPreguntas > 0) miProgresoActual.toFloat() / totalPreguntas else 0f,
+        label = "miProgreso"
+    )
+
+    val rivalPorcentaje by animateFloatAsState(
+        targetValue = if (totalPreguntas > 0) rivalProgreso.toFloat() / totalPreguntas else 0f,
+        label = "rivalProgreso"
     )
 
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = when {
-                esCritico -> Color(0xFFE53935)
-                elapsedSeconds >= (tiempoLimiteSegundos - 180) -> Color(0xFFFFA726)
-                else -> Color(0xFF4A6FA5)
-            }
-        ),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(4.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Timer,
-                contentDescription = "Tiempo",
-                tint = Color.White,
-                modifier = Modifier.size(20.dp)
-            )
-            Text(
-                text = tiempoRestante,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-        }
-    }
-}
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // YO
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape).background(MyColor.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("YO", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MyColor)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text("Tú", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("$miProgresoActual/$totalPreguntas", fontSize = 12.sp, color = MyColor, fontWeight = FontWeight.Bold)
+                    }
+                }
 
-@Composable
-fun BarraProgresoJugadoresMejorada(
-    progreso: List<ProgresoJugador>,
-    idEstudiante: String,
-    totalPreguntas: Int
-) {
-    if (progreso.isEmpty() || totalPreguntas == 0) return
-
-    val miProgreso = progreso.find { it.id_estudiante == idEstudiante }
-    val oponenteProgreso = progreso.find { it.id_estudiante != idEstudiante }
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        // Mi progreso
-        miProgreso?.let {
-            FilaProgresoJugadorCompacta(
-                jugador = it,
-                totalPreguntas = totalPreguntas,
-                esYo = true
-            )
-        }
-
-        // Oponente
-        oponenteProgreso?.let {
-            FilaProgresoJugadorCompacta(
-                jugador = it,
-                totalPreguntas = totalPreguntas,
-                esYo = false
-            )
-        }
-    }
-}
-
-@Composable
-fun FilaProgresoJugadorCompacta(
-    jugador: ProgresoJugador,
-    totalPreguntas: Int,
-    esYo: Boolean
-) {
-    val progresoFraction = jugador.preguntas_respondidas.toFloat() / totalPreguntas.coerceAtLeast(1)
-    val colorPrincipal = if (esYo) Color(0xFF4A6FA5) else Color(0xFFF4A261)
-
-    // Animación del progreso
-    val animatedProgress by animateFloatAsState(
-        targetValue = progresoFraction,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "progress"
-    )
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Avatar compacto
-        Box(contentAlignment = Alignment.Center) {
-            if (jugador.photoURL != null) {
-                AsyncImage(
-                    model = jugador.photoURL,
-                    contentDescription = jugador.nombre,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
+                // VS
                 Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(
-                            brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                                colors = listOf(colorPrincipal, colorPrincipal.copy(alpha = 0.7f))
-                            )
-                        ),
+                    modifier = Modifier.size(32.dp).background(Color(0xFFF5F5F5), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = jugador.nombre.split(" ")
-                            .take(2)
-                            .mapNotNull { it.firstOrNull() }
-                            .joinToString("")
-                            .uppercase(),
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
-                    )
+                    Text("VS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.Gray)
+                }
+
+                // RIVAL
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = rival?.nombre?.split(" ")?.firstOrNull() ?: "Esperando...",
+                            fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "$rivalProgreso/$totalPreguntas",
+                            fontSize = 12.sp, color = RivalColor, fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    if (rival?.photoURL != null) {
+                        AsyncImage(
+                            model = rival.photoURL,
+                            contentDescription = null,
+                            modifier = Modifier.size(40.dp).clip(CircleShape).border(2.dp, RivalColor, CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.size(40.dp).clip(CircleShape).background(if(rival!=null) RivalColor.copy(alpha = 0.2f) else Color.LightGray),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(rival?.nombre?.take(1) ?: "?", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if(rival!=null) RivalColor else Color.White)
+                        }
+                    }
                 }
             }
-        }
 
-        // Barra de progreso con segmentos de colores
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-            ) {
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(4.dp))
-                ) {
-                    val totalWidth = size.width
-                    val totalHeight = size.height
-                    val segmentWidth = totalWidth / totalPreguntas.coerceAtLeast(1)
-                    val correctas = jugador.preguntas_correctas
-                    val respondidas = jugador.preguntas_respondidas
-                    val incorrectas = respondidas - correctas
+            Spacer(Modifier.height(12.dp))
 
-                    // Fondo gris para todas las preguntas
-                    drawRect(
-                        color = Color(0xFFE0E0E0),
-                        topLeft = Offset(0f, 0f),
-                        size = Size(totalWidth, totalHeight)
-                    )
-
-                    // Dibujar segmentos de correctas (verde)
-                    for (i in 0 until correctas) {
-                        drawRect(
-                            color = Color(0xFF4CAF50),
-                            topLeft = Offset(i * segmentWidth + 0.5f, 0f),
-                            size = Size((segmentWidth - 1f).coerceAtLeast(0f), totalHeight)
-                        )
-                    }
-
-                    // Dibujar segmentos de incorrectas (rojo)
-                    for (i in 0 until incorrectas) {
-                        drawRect(
-                            color = Color(0xFFE53935),
-                            topLeft = Offset((correctas + i) * segmentWidth + 0.5f, 0f),
-                            size = Size((segmentWidth - 1f).coerceAtLeast(0f), totalHeight)
-                        )
-                    }
-
-                    // Overlay semi-transparente con color del jugador
-                    drawRect(
-                        color = colorPrincipal.copy(alpha = 0.15f),
-                        topLeft = Offset(0f, 0f),
-                        size = Size(totalWidth * animatedProgress, totalHeight)
-                    )
-                }
+            // Barras de Progreso "Carrera"
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                LinearProgressIndicator(
+                    progress = { miPorcentaje },
+                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                    color = MyColor,
+                    trackColor = MyColor.copy(alpha = 0.1f),
+                )
+                LinearProgressIndicator(
+                    progress = { rivalPorcentaje },
+                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                    color = RivalColor,
+                    trackColor = RivalColor.copy(alpha = 0.1f),
+                )
             }
         }
     }
 }
-// Función helper para convertir PreguntaSala a Pregunta
-fun convertirAPregunta(preguntaSala: PreguntaSala): Pregunta {
-    return Pregunta(
-        id_pregunta = preguntaSala.id_pregunta,
-        enunciado = preguntaSala.enunciado,
-        nivel_dificultad = preguntaSala.nivel_dificultad,
-        imagen = preguntaSala.imagen,
-        id_area = 0,
-        id_tema = null,
-        area = null,
-        tema = null,
-        opciones = preguntaSala.opciones.map { opcionSala ->
-            Opcion(
-                id_opcion = opcionSala.id_opcion,
-                texto_opcion = opcionSala.texto_opcion,
-                imagen = opcionSala.imagen,
-                es_correcta = null
+
+@Composable
+fun PvPTimer(segundosRestantes: Int) {
+    val minutos = segundosRestantes / 60
+    val segundos = segundosRestantes % 60
+    val isLowTime = segundosRestantes < 60
+
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = if (isLowTime) Color(0xFFFFEBEE) else Color(0xFFE3F2FD),
+        border = BorderStroke(1.dp, if (isLowTime) Color(0xFFE53935) else MyColor)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Rounded.AccessTime,
+                contentDescription = null,
+                tint = if (isLowTime) Color(0xFFE53935) else MyColor,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text = String.format("%02d:%02d", minutos, segundos),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isLowTime) Color(0xFFE53935) else MyColor,
+                fontFamily = FontFamily.Monospace
             )
         }
-    )
+    }
 }
