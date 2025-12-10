@@ -104,7 +104,33 @@ fun InstitutionNavHost(
                         val idInst = backStackEntry.arguments?.getInt("idInstitucion") ?: idInstitucion
                         CoursesScreen(
                             idInstitucion = idInst,
+                            usuario = usuario,
                             navController = navController
+                        )
+                    }
+
+                    composable(
+                        route = "courseDetail/{grado}/{grupo}/{cohorte}/{idInstitucion}",
+                        arguments = listOf(
+                            navArgument("grado") { type = NavType.StringType },
+                            navArgument("grupo") { type = NavType.StringType },
+                            navArgument("cohorte") { type = NavType.IntType },
+                            navArgument("idInstitucion") { type = NavType.IntType }
+                        )
+                    ) { backStackEntry ->
+                        val grado = backStackEntry.arguments?.getString("grado") ?: ""
+                        val grupo = backStackEntry.arguments?.getString("grupo") ?: ""
+                        val cohorte = backStackEntry.arguments?.getInt("cohorte") ?: 0
+                        val idInst = backStackEntry.arguments?.getInt("idInstitucion") ?: 0
+
+                        // Asegúrate de importar CourseDetailScreen
+                        CourseDetailScreen(
+                            grado = grado,
+                            grupo = grupo,
+                            cohorte = cohorte,
+                            idInstitucion = idInst,
+                            userRole = usuario.rol,
+                            onBack = { navController.popBackStack() }
                         )
                     }
 
@@ -160,12 +186,10 @@ fun InstitutionNavHost(
                     composable("gamification") {
                         SimulacroHomeScreen(
                             idDocente = usuario.documento,
-                            grado = usuario.grado ?: "",
-                            grupo = usuario.grupo ?: "",
-                            cohorte = usuario.cohorte ?: 0,
-                            idInstitucion = idInstitucion,
-                            onCrearSimulacro = {
-                                navController.navigate("crearSimulacro")
+                            // Ya no pasamos grado/grupo aquí, la pantalla los obtiene
+                            onCrearSimulacro = { cursoSeleccionado ->
+                                // NAVEGAMOS PASANDO LOS DATOS DEL CURSO SELECCIONADO
+                                navController.navigate("crearSimulacro/${cursoSeleccionado.grado}/${cursoSeleccionado.grupo}/${cursoSeleccionado.cohorte}/${cursoSeleccionado.idInstitucion}")
                             },
                             onVerSimulacro = { idSimulacro ->
                                 navController.navigate("simulacroDetalle/$idSimulacro")
@@ -173,14 +197,26 @@ fun InstitutionNavHost(
                         )
                     }
 
-                    // Crear simulacro
-                    composable("crearSimulacro") {
+                    composable(
+                        route = "crearSimulacro/{grado}/{grupo}/{cohorte}/{idInstitucion}",
+                        arguments = listOf(
+                            navArgument("grado") { type = NavType.StringType },
+                            navArgument("grupo") { type = NavType.StringType },
+                            navArgument("cohorte") { type = NavType.IntType },
+                            navArgument("idInstitucion") { type = NavType.IntType }
+                        )
+                    ) { backStackEntry ->
+                        val grado = backStackEntry.arguments?.getString("grado") ?: ""
+                        val grupo = backStackEntry.arguments?.getString("grupo") ?: ""
+                        val cohorte = backStackEntry.arguments?.getInt("cohorte") ?: 0
+                        val idInst = backStackEntry.arguments?.getInt("idInstitucion") ?: 0
+
                         CrearSimulacroScreen(
                             idDocente = usuario.documento,
-                            grado = usuario.grado ?: "",
-                            grupo = usuario.grupo ?: "",
-                            cohorte = usuario.cohorte ?: 0,
-                            idInstitucion = idInstitucion,
+                            grado = grado,
+                            grupo = grupo,
+                            cohorte = cohorte,
+                            idInstitucion = idInst,
                             onSimulacroCreado = { idSimulacro ->
                                 navController.navigate("simulacroEspera/$idSimulacro") {
                                     popUpTo("gamification")

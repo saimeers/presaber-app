@@ -568,6 +568,36 @@ interface PresaberApi {
         @Path("id_estudiante") idEstudiante: String
     ): HistorialSimulacroResponse
 
+    // Obtener los cursos de un docente
+    @GET("api/usuarios/{documento}/cursos")
+    suspend fun obtenerCursosDeUsuario(
+        @Path("documento") documento: String
+    ): CursosUsuarioResponse
+
+    // Obtener participantes del curso (con foto, nombre y rol)
+    @POST("api/curso/participantes")
+    suspend fun obtenerParticipantesCurso(
+        @Body request: CursoRequest
+    ): ParticipantesResponse
+
+    // Obtener promedios por área (de simulacros por secciones)
+    @POST("api/curso/promedios")
+    suspend fun obtenerPromediosCurso(
+        @Body request: CursoRequest
+    ): PromediosResponse
+
+    // Obtener ranking de estudiantes (experiencia total)
+    @POST("api/curso/ranking")
+    suspend fun obtenerRankingCurso(
+        @Body request: CursoRequest
+    ): RankingResponse
+
+    // Actualizar configuración del curso
+    @PATCH("api/curso/configuracion")
+    suspend fun actualizarConfiguracionCurso(
+        @Body request: ActualizarCursoRequest
+    ): ActualizarCursoResponse
+
     // ==================== SIMULACRO ADMIN ====================
     
     // Obtener todos los simulacros (admin)

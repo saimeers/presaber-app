@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.presaber.data.remote.Usuario
 import com.example.presaber.ui.components.AddCard
 import com.example.presaber.ui.institution.components.courses.CourseCard
 import com.example.presaber.ui.institution.viewmodel.CoursesViewModel
@@ -26,6 +27,7 @@ import com.example.presaber.ui.institution.viewmodel.CoursesViewModel
 @Composable
 fun CoursesScreen(
     idInstitucion: Int,
+    usuario: Usuario,
     navController: NavController,
     viewModel: CoursesViewModel = viewModel()
 ) {
@@ -36,14 +38,27 @@ fun CoursesScreen(
 
     var searchQuery by remember { mutableStateOf("") }
 
-    // Filtrar cursos según la búsqueda
-    val cursosFiltrados = remember(cursos, searchQuery, refreshTrigger) {
-        if (searchQuery.isEmpty()) {
-            cursos
+    val esDirector = usuario.rol == 4
+    val esDocente = usuario.rol == 2
+
+    // Filtrar cursos según ROL y BÚSQUEDA
+    val cursosFiltrados = remember(cursos, searchQuery, refreshTrigger, usuario) {
+        // 1. Filtro de seguridad por Rol
+        val cursosVisibles = if (esDocente) {
+            // El docente solo ve cursos donde su documento coincida con el documento del docente del curso
+            cursos.filter { it.documentoDocente == usuario.documento }
         } else {
-            cursos.filter { curso ->
+            // El director (o admin) ve todos los cursos
+            cursos
+        }
+
+        // 2. Filtro por texto de búsqueda
+        if (searchQuery.isEmpty()) {
+            cursosVisibles
+        } else {
+            cursosVisibles.filter { curso ->
                 val query = searchQuery.lowercase()
-                "Grupo ${curso.grado}-${curso.grupo}".lowercase().contains(query) ||
+                "grupo ${curso.grado}-${curso.grupo}".lowercase().contains(query) ||
                         "grado ${curso.grado}".lowercase().contains(query) ||
                         "grupo ${curso.grupo}".lowercase().contains(query) ||
                         curso.cohorte.toString().contains(query) ||
@@ -54,6 +69,7 @@ fun CoursesScreen(
 
     LaunchedEffect(idInstitucion) {
         viewModel.setIdInstitucion(idInstitucion)
+        // Cargamos todos los cursos de la institución. El filtrado visual se hace arriba.
         viewModel.cargarCursos(idInstitucion)
     }
 
@@ -71,28 +87,30 @@ fun CoursesScreen(
             // Espaciador superior
             item { Spacer(modifier = Modifier.height(8.dp)) }
 
-            // Título
+            // Título dinámico
             item {
                 Text(
-                    text = "Cursos",
+                    text = if (esDocente) "Mis Cursos Asignados" else "Gestión de Cursos",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF485E92),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth() .padding(bottom = 16.dp, top = 8.dp)
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp, top = 8.dp)
                 )
             }
 
-
-            // Botón crear curso
-            item {
-                AddCard(
-                    text = "Crear nuevo curso",
-                    onClick = {
-                        navController.navigate("CreateCourseScreen/$idInstitucion")
-                    }
-                )
+            // Botón crear curso: SOLO VISIBLE PARA DIRECTOR
+            if (esDirector) {
+                item {
+                    AddCard(
+                        text = "Crear nuevo curso",
+                        onClick = {
+                            navController.navigate("CreateCourseScreen/$idInstitucion")
+                        }
+                    )
+                }
             }
+
             // Buscador
             item {
                 OutlinedTextField(
@@ -102,27 +120,15 @@ fun CoursesScreen(
                         .fillMaxWidth()
                         .padding(vertical = 6.dp),
                     placeholder = {
-                        Text(
-                            "Buscar..",
-                            color = Color(0xFF9E9E9E),
-                            fontSize = 14.sp
-                        )
+                        Text("Buscar...", color = Color(0xFF9E9E9E), fontSize = 14.sp)
                     },
                     leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Buscar",
-                            tint = Color(0xFF5B7BC6)
-                        )
+                        Icon(Icons.Default.Search, "Buscar", tint = Color(0xFF5B7BC6))
                     },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(
-                                    imageVector = Icons.Default.Clear,
-                                    contentDescription = "Limpiar búsqueda",
-                                    tint = Color(0xFF9E9E9E)
-                                )
+                                Icon(Icons.Default.Clear, "Limpiar", tint = Color(0xFF9E9E9E))
                             }
                         }
                     },
@@ -141,106 +147,41 @@ fun CoursesScreen(
             if (searchQuery.isNotEmpty()) {
                 item {
                     Text(
-                        text = "${cursosFiltrados.size} curso${if (cursosFiltrados.size != 1) "s" else ""} encontrado${if (cursosFiltrados.size != 1) "s" else ""}",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = Color(0xFF666666),
-                            fontWeight = FontWeight.Medium
-                        ),
+                        text = "${cursosFiltrados.size} curso(s) encontrado(s)",
+                        style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF666666)),
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
                 }
             }
 
-            // Lista de cursos
+            // Estados de Carga / Error / Lista
             if (loading) {
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = Color(0xFF5B7BC6))
                     }
                 }
             } else if (error != null) {
                 item {
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFFFEBEE)
-                        ),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Error,
-                                contentDescription = null,
-                                tint = Color(0xFFC62828)
-                            )
+                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Error, null, tint = Color(0xFFC62828))
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = error ?: "Error desconocido",
-                                color = Color(0xFFC62828),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            Text(error ?: "Error desconocido", color = Color(0xFFC62828))
                         }
                     }
                 }
             } else if (cursosFiltrados.isEmpty()) {
                 item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 32.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(40.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = if (searchQuery.isEmpty()) Icons.Default.School else Icons.Default.SearchOff,
-                                contentDescription = null,
-                                tint = Color(0xFFBDBDBD),
-                                modifier = Modifier.size(64.dp)
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = if (searchQuery.isEmpty())
-                                    "No hay cursos registrados"
-                                else
-                                    "No se encontraron cursos",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    color = Color(0xFF666666),
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = if (searchQuery.isEmpty())
-                                    "Crea tu primer curso para comenzar"
-                                else
-                                    "Intenta con otros términos de búsqueda",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = Color(0xFF9E9E9E)
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
+                    // Empty State personalizado según rol
+                    EmptyStateCard(
+                        isSearching = searchQuery.isNotEmpty(),
+                        esDocente = esDocente
+                    )
                 }
             } else {
                 items(
@@ -256,10 +197,15 @@ fun CoursesScreen(
                         cantidadEstudiantes = curso.cantidadEstudiantes,
                         nombreDocente = curso.nombreDocente,
                         fotoDocente = curso.fotoDocente,
-                        onToggleHabilitado = {
-                            viewModel.toggleHabilitado(curso, idInstitucion)
+                        onClick = {
+                            navController.navigate("courseDetail/${curso.grado}/${curso.grupo}/${curso.cohorte}/$idInstitucion")
                         },
-                        showSwitch = true // Muestra el switch porque es para institución
+                        onToggleHabilitado = {
+                            if (esDirector) {
+                                viewModel.toggleHabilitado(curso, idInstitucion)
+                            }
+                        },
+                        showSwitch = esDirector
                     )
                 }
             }
@@ -270,7 +216,7 @@ fun CoursesScreen(
     }
 }
 
-// Data class para los cursos
+// Data class para los cursos (Asegurando que tenga documentoDocente)
 data class Curso(
     val id: String,
     val grado: String,
@@ -280,5 +226,56 @@ data class Curso(
     val habilitado: Boolean,
     val cantidadEstudiantes: Int = 0,
     val nombreDocente: String? = null,
+    val documentoDocente: String? = null, // ID vital para filtrar
     val fotoDocente: String? = null
 )
+
+@Composable
+fun EmptyStateCard(isSearching: Boolean, esDocente: Boolean) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = if (isSearching) Icons.Default.SearchOff else Icons.Default.School,
+                contentDescription = null,
+                tint = Color(0xFFBDBDBD),
+                modifier = Modifier.size(64.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Texto dinámico según la situación
+            val mensajeTitulo = when {
+                isSearching -> "No se encontraron cursos"
+                esDocente -> "No tienes cursos asignados"
+                else -> "No hay cursos registrados"
+            }
+
+            Text(
+                text = mensajeTitulo,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    color = Color(0xFF666666),
+                    fontWeight = FontWeight.SemiBold
+                ),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Solo sugerimos crear si NO es docente y NO está buscando
+            if (!esDocente && !isSearching) {
+                Text(
+                    text = "Crea tu primer curso para comenzar",
+                    style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF9E9E9E)),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}

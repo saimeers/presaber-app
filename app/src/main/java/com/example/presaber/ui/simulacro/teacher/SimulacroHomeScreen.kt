@@ -3,6 +3,7 @@ package com.example.presaber.ui.simulacro.teacher
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,16 +11,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AccessTime
+import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Quiz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.presaber.data.remote.CursoUsuario
 import com.example.presaber.data.remote.RetrofitClient
 import com.example.presaber.data.remote.SimulacroResumen
 
@@ -29,31 +33,62 @@ private val AccentOrange = Color(0xFFFCB35A)
 private val TextDark = Color(0xFF1A1B21)
 private val TextGray = Color(0xFF757575)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SimulacroHomeScreen(
     idDocente: String,
-    grado: String,
-    grupo: String,
-    cohorte: Int,
-    idInstitucion: Int,
-    onCrearSimulacro: () -> Unit,
+    onCrearSimulacro: (CursoUsuario) -> Unit, // Pasamos el curso seleccionado al crear
     onVerSimulacro: (Int) -> Unit
 ) {
-    var simulacros by remember { mutableStateOf<List<SimulacroResumen>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    // Estado para los cursos del docente
+    var cursos by remember { mutableStateOf<List<CursoUsuario>>(emptyList()) }
+    var cursoSeleccionado by remember { mutableStateOf<CursoUsuario?>(null) }
+    var expandedCursoSelector by remember { mutableStateOf(false) } // Para el menú dropdown
 
+    // Estado para los simulacros del curso seleccionado
+    var simulacros by remember { mutableStateOf<List<SimulacroResumen>>(emptyList()) }
+    var isLoadingSimulacros by remember { mutableStateOf(false) }
+
+    // Estado inicial de carga de cursos
+    var isLoadingCursos by remember { mutableStateOf(true) }
+
+    // 1. Cargar Cursos del Docente al iniciar
     LaunchedEffect(Unit) {
         try {
-            val response = RetrofitClient.api.obtenerSimulacrosCurso(
-                grado, grupo, cohorte, idInstitucion
-            )
-            if (response.success) {
-                simulacros = response.data
+            val response = RetrofitClient.api.obtenerCursosDeUsuario(idDocente)
+            if (response.success && response.data.isNotEmpty()) {
+                cursos = response.data
+                cursoSeleccionado = cursos[0] // Seleccionar el primero por defecto
             }
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
-            isLoading = false
+            isLoadingCursos = false
+        }
+    }
+
+    // 2. Cargar Simulacros cuando cambia el curso seleccionado
+    LaunchedEffect(cursoSeleccionado) {
+        if (cursoSeleccionado != null) {
+            isLoadingSimulacros = true
+            try {
+                val response = RetrofitClient.api.obtenerSimulacrosCurso(
+                    cursoSeleccionado!!.grado,
+                    cursoSeleccionado!!.grupo,
+                    cursoSeleccionado!!.cohorte,
+                    cursoSeleccionado!!.idInstitucion
+                )
+                if (response.success) {
+                    simulacros = response.data
+                } else {
+                    simulacros = emptyList()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                simulacros = emptyList()
+            } finally {
+                isLoadingSimulacros = false
+            }
         }
     }
 
@@ -62,7 +97,6 @@ fun SimulacroHomeScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Fondo decorativo
         BackgroundBlobs()
 
         LazyColumn(
@@ -70,82 +104,134 @@ fun SimulacroHomeScreen(
             contentPadding = PaddingValues(24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            // HEADER Y SELECTOR DE CURSO
             item {
                 Column {
                     Text(
-                        text = "Simulacro",
+                        text = "Simulacros",
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextDark
                     )
-                    Text(
-                        text = "$grado$grupo - Cohorte $cohorte",
-                        fontSize = 16.sp,
-                        color = TextGray
-                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    if (isLoadingCursos) {
+                        LinearProgressIndicator(modifier = Modifier.width(100.dp), color = AccentBlue)
+                    } else if (cursoSeleccionado != null) {
+                        // SELECTOR DE CURSO
+                        Box {
+                            Surface(
+                                onClick = { expandedCursoSelector = true },
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFF5F7FA),
+                                border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = "Curso Seleccionado",
+                                            fontSize = 10.sp,
+                                            color = TextGray
+                                        )
+                                        Text(
+                                            text = "${cursoSeleccionado!!.grado}${cursoSeleccionado!!.grupo} - Cohorte ${cursoSeleccionado!!.cohorte}",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AccentBlue
+                                        )
+                                    }
+                                    Spacer(Modifier.width(12.dp))
+                                    Icon(Icons.Rounded.ArrowDropDown, null, tint = TextGray)
+                                }
+                            }
+
+                            // Dropdown Menu
+                            DropdownMenu(
+                                expanded = expandedCursoSelector,
+                                onDismissRequest = { expandedCursoSelector = false },
+                                modifier = Modifier.background(Color.White)
+                            ) {
+                                cursos.forEach { curso ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = "${curso.grado}${curso.grupo} - ${curso.cohorte}",
+                                                fontWeight = if(curso == cursoSeleccionado) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                        },
+                                        onClick = {
+                                            cursoSeleccionado = curso
+                                            expandedCursoSelector = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Text("No tienes cursos asignados", color = Color.Red)
+                    }
                 }
             }
 
-            // Botón crear simulacro
-            item {
-                Surface(
-                    onClick = onCrearSimulacro,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    color = AccentBlue,
-                    shadowElevation = 8.dp
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        verticalAlignment = Alignment.CenterVertically
+            // BOTÓN CREAR (Solo si hay curso seleccionado)
+            if (cursoSeleccionado != null) {
+                item {
+                    Surface(
+                        onClick = { onCrearSimulacro(cursoSeleccionado!!) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        color = AccentBlue,
+                        shadowElevation = 8.dp
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Add,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Spacer(Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = "Crear nuevo simulacro",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Add,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
                             )
-                            Text(
-                                text = "Para este curso",
-                                fontSize = 14.sp,
-                                color = Color.White.copy(alpha = 0.8f)
-                            )
+                            Spacer(Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    text = "Crear simulacro",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "Para ${cursoSeleccionado!!.grado}${cursoSeleccionado!!.grupo}",
+                                    fontSize = 14.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            // Título historial
+            // TÍTULO HISTORIAL
             item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Simulacros del curso",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextDark
-                    )
-                }
+                Text(
+                    text = "Historial",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextDark
+                )
             }
 
-            // Lista de simulacros
-            if (isLoading) {
+            // LISTA DE SIMULACROS
+            if (isLoadingSimulacros) {
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = AccentBlue)
                     }
                 }
@@ -165,6 +251,8 @@ fun SimulacroHomeScreen(
     }
 }
 
+// ... (SimulacroItemCard, EmptyStateSimulacro y BackgroundBlobs se mantienen igual) ...
+// Asegúrate de copiar las funciones auxiliares que ya tenías para que compile.
 @Composable
 fun SimulacroItemCard(
     simulacro: SimulacroResumen,
@@ -197,7 +285,6 @@ fun SimulacroItemCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            // Estado badge
             Surface(
                 shape = RoundedCornerShape(8.dp),
                 color = estadoColor.copy(alpha = 0.1f),
@@ -215,7 +302,6 @@ fun SimulacroItemCard(
 
             Spacer(Modifier.height(12.dp))
 
-            // Info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -257,7 +343,6 @@ fun SimulacroItemCard(
                     }
                 }
 
-                // Fecha
                 Text(
                     text = simulacro.fecha_creacion.take(10),
                     fontSize = 12.sp,
@@ -290,7 +375,7 @@ fun EmptyStateSimulacro() {
             fontWeight = FontWeight.Medium
         )
         Text(
-            text = "Crea el primero para tu curso",
+            text = "Crea el primero para este curso",
             color = Color.LightGray,
             fontSize = 14.sp
         )
