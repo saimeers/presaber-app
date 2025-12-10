@@ -1,4 +1,4 @@
-package com.example.presaber.ui.layout
+package com.example.presaber.layout
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -21,6 +21,7 @@ import coil.compose.AsyncImage
 import com.example.presaber.R
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.ui.platform.LocalInspectionMode
+import com.example.presaber.data.remote.Usuario
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,7 +29,8 @@ fun AdminLayout(
     selectedNavItem: Int = 0,
     onNavItemSelected: (Int) -> Unit = {},
     showAccountDialog: MutableState<Boolean> = remember { mutableStateOf(false) },
-    content: @Composable (PaddingValues) -> Unit
+    content: @Composable (PaddingValues) -> Unit,
+    usuario: Usuario
 ) {
     // Detecta si es un modo Preview
     val isInPreview = LocalInspectionMode.current
@@ -96,7 +98,7 @@ fun AdminLayout(
             NavigationBar(
                 containerColor = Color(0xFFE6EAF3),
                 tonalElevation = 0.dp,
-                modifier = Modifier.height(96.dp)  // barra grande
+                modifier = Modifier.height(90.dp)  // barra grande
             ) {
 
                 // ---------- HOME ----------
@@ -111,7 +113,7 @@ fun AdminLayout(
                             Icon(
                                 painter = painterResource(id = R.drawable.icon_home),
                                 contentDescription = "Inicio",
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(26.dp)
                             )
                         }
                     },
@@ -134,7 +136,30 @@ fun AdminLayout(
                             Icon(
                                 painter = painterResource(id = R.drawable.icon_institution),
                                 contentDescription = "Instituciones",
-                                modifier = Modifier.size(38.dp)   // icono central más grande
+                                modifier = Modifier.size(26.dp)   // icono central más grande
+                            )
+                        }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = selectedIconColor,
+                        unselectedIconColor = unselectedIconColor,
+                        indicatorColor = indicatorColor
+                    )
+                )
+
+                // ---------- SIMULACROS ----------
+                NavigationBarItem(
+                    selected = selectedNavItem == 2,
+                    onClick = { onNavItemSelected(2) },
+                    icon = {
+                        Box(
+                            modifier = Modifier.fillMaxHeight(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.icon_grupos),
+                                contentDescription = "Simulacros",
+                                modifier = Modifier.size(26.dp)
                             )
                         }
                     },
@@ -147,8 +172,8 @@ fun AdminLayout(
 
                 // ---------- USER ----------
                 NavigationBarItem(
-                    selected = selectedNavItem == 2,
-                    onClick = { onNavItemSelected(2) },
+                    selected = selectedNavItem == 3,
+                    onClick = { onNavItemSelected(3) },
                     icon = {
                         Box(
                             modifier = Modifier.fillMaxHeight(),
@@ -157,7 +182,7 @@ fun AdminLayout(
                             Icon(
                                 painter = painterResource(id = R.drawable.icon_user_settings),
                                 contentDescription = "Usuario",
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(26.dp)
                             )
                         }
                     },
@@ -292,31 +317,30 @@ fun AdminAccountOption(icon: Int, text: String, onClick: () -> Unit) {
 fun AdminLayoutPreview() {
     AdminLayout(
         selectedNavItem = 1,
-        onNavItemSelected = {},
-        showAccountDialog = remember { mutableStateOf(false) }
-    ) { paddingValues ->
-        // Aquí colocas un contenido de ejemplo solo para que se vea algo en la preview
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Vista de Administrador",
-                fontSize = 18.sp,
-                color = Color(0xFF1A1B21)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Aquí se mostrará el contenido de cada pantalla",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-        }
-    }
+        content = { paddingValues ->
+            // Aquí colocas un contenido de ejemplo solo para que se vea algo en la preview
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Vista de Administrador",
+                    fontSize = 18.sp,
+                    color = Color(0xFF1A1B21)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Aquí se mostrará el contenido de cada pantalla",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            }
+        }, usuario = Usuario("15151", "Perez", "Perez", "", "", "", 0, "", 0, 0 )
+    )
 }
 
 

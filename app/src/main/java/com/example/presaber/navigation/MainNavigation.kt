@@ -125,10 +125,17 @@ private fun RoleBasedNavigation(
         }
 
         UserRole.ADMINISTRADOR -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Panel de Administrador - En desarrollo")
-            }
+            com.example.presaber.ui.admin.AdminNavHost(
+                usuario = usuario
+            )
         }
+
+
+//        UserRole.ADMINISTRADOR -> {
+//            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+//                Text("Panel de Administrador - En desarrollo")
+//            }
+//        }
 
         null -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
