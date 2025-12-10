@@ -48,6 +48,7 @@ class CoursesViewModel : ViewModel() {
                         habilitado = cursoResponse.habilitado,
                         cantidadEstudiantes = cursoResponse.cantidad_estudiantes ?: 0,
                         nombreDocente = cursoResponse.docente?.nombre_completo,
+                        documentoDocente = cursoResponse.docente?.documento,
                         fotoDocente = null
                     )
                 }

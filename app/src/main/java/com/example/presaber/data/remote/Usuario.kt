@@ -39,3 +39,16 @@ data class VerificarCorreoResponse(
     val existe: Boolean,
     val mensaje: String
 )
+
+data class CursosUsuarioResponse(
+    val success: Boolean,
+    val data: List<CursoUsuario>
+)
+
+data class CursoUsuario(
+    val grado: String,
+    val grupo: String,
+    val cohorte: Int,
+    @SerializedName("id_institucion")
+    val idInstitucion: Int
+)

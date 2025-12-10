@@ -21,6 +21,7 @@ import com.example.presaber.R
 import com.example.presaber.ui.theme.PresaberTheme
 import com.example.presaber.ui.components.AddCard
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 
@@ -125,7 +126,7 @@ fun SubjectCard(
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp),
+            .height(100.dp), // Mantenemos tu altura fija deseada
         colors = CardDefaults.elevatedCardColors(
             containerColor = Color.White
         ),
@@ -142,21 +143,28 @@ fun SubjectCard(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(16.dp),
+                    .padding(horizontal = 12.dp, vertical = 10.dp), // Padding optimizado (antes 16)
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = subject.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    color = Color(0xFF1A1B21)
+                    color = Color(0xFF1A1B21),
+                    maxLines = 2, // Permitimos 2 líneas para el título
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 18.sp // Interlineado ajustado para ahorrar espacio vertical
                 )
+
                 Spacer(modifier = Modifier.height(4.dp))
+
                 Text(
                     text = subject.description,
                     color = Color.Gray,
                     fontSize = 12.sp,
-                    lineHeight = 16.sp
+                    lineHeight = 14.sp, // Texto más compacto
+                    maxLines = 2, // Limitamos descripción para que no se corte feo
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -165,7 +173,7 @@ fun SubjectCard(
                 color = subject.cardColor,
                 shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp),
                 modifier = Modifier
-                    .width(120.dp)
+                    .width(100.dp) // Reducido de 120 a 100 para dar espacio al texto
                     .fillMaxHeight()
             ) {
                 Image(

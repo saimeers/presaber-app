@@ -20,6 +20,7 @@ import coil.compose.AsyncImage
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CourseCard(
+    onClick: () -> Unit,
     grado: String,
     grupo: String,
     cohorte: Int,
@@ -29,12 +30,12 @@ fun CourseCard(
     nombreDocente: String?,
     fotoDocente: String?,
     onToggleHabilitado: () -> Unit,
-    showSwitch: Boolean = true // Para controlar si se muestra el switch según el rol
+    showSwitch: Boolean = true
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
     var showAccessKeyDialog by remember { mutableStateOf(false) }
 
     Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),

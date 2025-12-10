@@ -25,6 +25,13 @@ import com.example.presaber.data.remote.Usuario
 import com.example.presaber.ui.layout.AccountDialog
 import com.google.firebase.auth.FirebaseAuth
 
+private data class NavItem(
+    val index: Int,
+    val iconRes: Int? = null,
+    val iconVector: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    val description: String
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InstitutionLayout(
@@ -45,19 +52,61 @@ fun InstitutionLayout(
         }
     } else null
 
+    val esDocente = usuario?.rol == 2
+    val esDirector = usuario?.rol == 4
+
+    // Determinar el texto del rol para mostrar
+    val rolTexto = when (usuario?.rol) {
+        2 -> "DOCENTE"
+        4 -> "DIRECTOR"
+        else -> ""
+    }
+
+    val navItems = remember(esDocente, esDirector) {
+        val items = mutableListOf<NavItem>()
+        items.add(NavItem(0, iconVector = Icons.Default.Home, description = "Inicio"))
+        if (esDirector) {
+            items.add(NavItem(1, iconRes = R.drawable.icon_profesores, description = "Profesores"))
+        }
+        items.add(NavItem(2, iconRes = R.drawable.icon_pregunta, description = "Preguntas"))
+        items.add(NavItem(3, iconRes = R.drawable.icon_grupos, description = "Grupos"))
+        items.add(NavItem(4, iconRes = R.drawable.icon_gamificacion, description = "Gamificación"))
+        items
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(
-                        text = buildAnnotatedString {
-                            append("Pre")
-                            withStyle(style = SpanStyle(color = Color(0xFF5B7ABD))) { append("Saber") }
-                        },
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1A1B21)
-                    )
+                    // Usamos una columna para apilar Título y Subtítulo
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        // Título Principal
+                        Text(
+                            text = buildAnnotatedString {
+                                append("Pre")
+                                withStyle(style = SpanStyle(color = Color(0xFF5B7ABD))) { append("Saber") }
+                            },
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1A1B21),
+                            lineHeight = 24.sp // Ajuste para que no quede muy separado
+                        )
+
+                        // Subtítulo del Rol (Letra pequeñita)
+                        if (rolTexto.isNotEmpty()) {
+                            Text(
+                                text = rolTexto,
+                                fontSize = 10.sp, // Tamaño pequeño
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF5B7BC6), // Un azul suave o gris (Color.Gray)
+                                letterSpacing = 1.sp, // Espaciado elegante
+                                lineHeight = 10.sp
+                            )
+                        }
+                    }
                 },
                 actions = {
                     IconButton(onClick = { showAccountDialog.value = true }) {
@@ -90,95 +139,34 @@ fun InstitutionLayout(
                 containerColor = Color(0xFFE2E7EE),
                 tonalElevation = 0.dp
             ) {
-                // Inicio
-                NavigationBarItem(
-                    icon = {
-                        Icon(
-                            Icons.Default.Home,
-                            contentDescription = "Inicio",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    selected = selectedNavItem == 0,
-                    onClick = { onNavItemSelected(0) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF5B7BC6),
-                        indicatorColor = Color(0xFFD8E2F7)
-                    ),
-                    label = null
-                )
-
-                // Profesores
-                NavigationBarItem(
-                    icon = {
-                        Icon(
-                            painterResource(id = R.drawable.icon_profesores),
-                            contentDescription = "Profesores",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    selected = selectedNavItem == 1,
-                    onClick = { onNavItemSelected(1) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF5B7BC6),
-                        indicatorColor = Color(0xFFD8E2F7)
-                    ),
-                    label = null
-                )
-
-                // Preguntas
-                NavigationBarItem(
-                    icon = {
-                        Icon(
-                            painterResource(id = R.drawable.icon_pregunta),
-                            contentDescription = "Preguntas",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    selected = selectedNavItem == 2,
-                    onClick = { onNavItemSelected(2) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF5B7BC6),
-                        indicatorColor = Color(0xFFD8E2F7)
-                    ),
-                    label = null
-                )
-
-                // Grupos
-                NavigationBarItem(
-                    icon = {
-                        Icon(
-                            painterResource(id = R.drawable.icon_grupos),
-                            contentDescription = "Grupos",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    selected = selectedNavItem == 3,
-                    onClick = { onNavItemSelected(3) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF5B7BC6),
-                        indicatorColor = Color(0xFFD8E2F7)
-                    ),
-                    label = null
-                )
-
-                // Gamificación
-                NavigationBarItem(
-                    icon = {
-                        Icon(
-                            painterResource(id = R.drawable.icon_gamificacion),
-                            contentDescription = "Gamificación",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    selected = selectedNavItem == 4,
-                    onClick = { onNavItemSelected(4) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF5B7BC6),
-                        indicatorColor = Color(0xFFD8E2F7)
-                    ),
-                    label = null
-                )
+                navItems.forEach { item ->
+                    NavigationBarItem(
+                        icon = {
+                            if (item.iconRes != null) {
+                                Icon(
+                                    painter = painterResource(id = item.iconRes),
+                                    contentDescription = item.description,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            } else if (item.iconVector != null) {
+                                Icon(
+                                    imageVector = item.iconVector,
+                                    contentDescription = item.description,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        },
+                        label = null,
+                        selected = selectedNavItem == item.index,
+                        onClick = { onNavItemSelected(item.index) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFF5B7BC6),
+                            indicatorColor = Color(0xFFD8E2F7),
+                            unselectedIconColor = Color.Gray
+                        ),
+                        alwaysShowLabel = false
+                    )
+                }
             }
         },
         content = { paddingValues ->
