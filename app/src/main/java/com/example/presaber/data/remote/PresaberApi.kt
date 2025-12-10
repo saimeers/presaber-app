@@ -663,6 +663,46 @@ interface PresaberApi {
         @Path("id_institucion") idInstitucion: Int
     ): List<CursoResponse>
 
+    // ==================== SIMULACRO ESTUDIANTE ====================
+    
+    // Obtener último simulacro del estudiante
+    @GET("api/simulacros/ultimo/{id_usuario}")
+    suspend fun obtenerUltimoSimulacro(
+        @Path("id_usuario") idUsuario: String
+    ): UltimoSimulacroResponse
+
+    // Obtener simulacros disponibles para el estudiante
+    @GET("api/simulacros/disponibles/{id_estudiante}")
+    suspend fun obtenerSimulacrosDisponibles(
+        @Path("id_estudiante") idEstudiante: String
+    ): List<SimulacroDisponible>
+
+    // Obtener preguntas de una sesión para un estudiante
+    @GET("api/sesion/{id_sesion}/estudiante/{id_estudiante}")
+    suspend fun obtenerPreguntasSesion(
+        @Path("id_sesion") idSesion: Int,
+        @Path("id_estudiante") idEstudiante: String
+    ): PreguntasSesionResponse
+
+    // Guardar / actualizar respuesta de pregunta
+    @POST("api/sesion/respuesta")
+    suspend fun responderPreguntaSesion(
+        @Body request: ResponderPreguntaRequest
+    ): GuardarRespuestaResponse
+
+    // Finalizar sesión
+    @POST("api/sesion/finalizar")
+    suspend fun finalizarSesion(
+        @Body request: FinalizarSesionRequest
+    ): FinalizarSesionResponse
+
+    // Obtener resultados de sesión
+    @GET("api/sesion/resultado/{id_sesion}/estudiante/{id_estudiante}")
+    suspend fun obtenerResultadosSesion(
+        @Path("id_sesion") idSesion: Int,
+        @Path("id_estudiante") idEstudiante: String
+    ): ResultadoSesionResponse
+
     // Obtener lista simple de instituciones (id y nombre)
     @GET("api/instituciones")
     suspend fun obtenerInstituciones(): InstitucionesSimpleResponse
@@ -864,4 +904,134 @@ data class AsignacionResultado(
 data class AgregarPreguntaRequest(
     val id_pregunta: Int,
     val puntaje_base: Double = 0.5
+)
+
+// ==================== DATA MODELS PARA SIMULACRO ESTUDIANTE ====================
+
+data class OpcionSesion(
+    val id_opcion: Int,
+    val texto_opcion: String?,
+    val imagen_opcion: String?
+)
+
+data class PreguntaSesion(
+    val id_sesion_pregunta: Int,
+    val id_pregunta: Int,
+    val orden_en_sesion: Int,
+    val puntaje_base: Double,
+    val id_sesion_area: Int,
+    val area_id: Int?,
+    val area_nombre: String?,
+    val enunciado: String?,
+    val imagen_url: String?,
+    val opciones: List<OpcionSesion>,
+    val contestada: Boolean,
+    val opcion_seleccionada: Int?
+)
+
+data class ProgresoSesionData(
+    val ultima_pregunta: Int?,
+    val completada: Boolean,
+    val puntaje_acumulado: Double,
+    val puede_continuar: Boolean
+)
+
+data class PreguntasSesionResponse(
+    val id_sesion: Int,
+    val nombre: String,
+    val instrucciones: String?,
+    val duracion_segundos: Int,
+    val tiempo_usado: Int,
+    val tiempo_restante: Int,
+    val total_preguntas: Int,
+    val preguntas_contestadas: Int,
+    val preguntas: List<PreguntaSesion>,
+    val progreso: ProgresoSesionData,
+    val puedeIngresar: Boolean,
+    val mensaje: String? = null
+)
+
+data class ResponderPreguntaRequest(
+    val id_estudiante: String,
+    val id_sesion: Int,
+    val id_sesion_pregunta: Int,
+    val id_opcion: Int,
+    val orden: Int
+)
+
+data class GuardarRespuestaResponse(
+    val status: String,
+    val mensaje: String,
+    val guardado: Boolean,
+    val cambio: Boolean,
+    val total_contestadas: Int,
+    val puntaje_acumulado: Double
+)
+
+data class FinalizarSesionRequest(
+    val id_sesion: Int,
+    val id_estudiante: String,
+    val tiempo_usado_final: Int? = null
+)
+
+data class FinalizarSesionResponse(
+    val status: String,
+    val mensaje: String,
+    val completada: Boolean,
+    val puntaje_final: Double,
+    val tiempo_total: Int
+)
+
+data class ResultadoSesionResponse(
+    val disponible: Boolean,
+    val mensaje: String? = null,
+    val puntaje_obtenido: Double? = null,
+    val puntaje_total: Double? = null,
+    val correctas: Int? = null,
+    val incorrectas: Int? = null,
+    val tiempo_total: Int? = null,
+    val experiencia_ganada: Int? = null
+)
+
+// ==================== DATA MODELS PARA SIMULACRO ESTUDIANTE ====================
+
+// Respuesta del último simulacro
+data class UltimoSimulacroResponse(
+    val id_simulacro: Int,
+    val fecha: String,
+    val completado: Boolean,
+    val puntaje_total: Double,
+    val tiempo_total: Int, // en segundos
+    val preguntas_total: Int
+)
+
+// Simulacro disponible con sesiones
+data class SimulacroDisponible(
+    val id_curso_simulacro: Int,
+    val id_simulacro: Int,
+    val grado: String,
+    val grupo: String,
+    val cohorte: Int,
+    val fecha_apertura_s1: String,
+    val fecha_cierre_s1: String,
+    val fecha_apertura_s2: String,
+    val fecha_cierre_s2: String,
+    val simulacro: SimulacroDisponibleData
+)
+
+data class SimulacroDisponibleData(
+    val id_simulacro: Int,
+    val nombre: String,
+    val sesions: List<SesionDisponible>
+)
+
+data class SesionDisponible(
+    val id_sesion: Int,
+    val nombre: String,
+    val descripcion: String?,
+    val duracion_segundos: Int,
+    val orden: Int,
+    val habilitada: Boolean,
+    val fecha_apertura: String?,
+    val fecha_cierre: String?
 )

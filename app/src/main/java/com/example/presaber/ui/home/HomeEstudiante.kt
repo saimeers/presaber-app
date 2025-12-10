@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.presaber.data.remote.*
 import com.example.presaber.ui.home.components.Quiz
 import com.example.presaber.ui.home.components.RetoList
@@ -13,6 +14,9 @@ import com.example.presaber.ui.layout.StudentLayout
 import com.example.presaber.ui.pvp.*
 import com.example.presaber.ui.simulacro.student.*
 import com.example.presaber.utils.SimulacroSessionManager
+import com.example.presaber.viewmodel.SimulacroEstudianteViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 sealed class PvPState {
     object Home : PvPState()
@@ -34,6 +38,15 @@ sealed class SimulacroState {
 
     // Estado final: Podio
     data class Podio(val idSimulacro: Int) : SimulacroState()
+}
+
+sealed class SimulacroIndividualState {
+    object None : SimulacroIndividualState()
+    object UltimoSimulacro : SimulacroIndividualState()
+    object Disponibles : SimulacroIndividualState()
+    data class Sesiones(val simulacro: com.example.presaber.data.remote.SimulacroDisponible) : SimulacroIndividualState()
+    data class SesionQuiz(val idSesion: Int, val sesionNombre: String) : SimulacroIndividualState()
+    data class SesionResultado(val idSesion: Int) : SimulacroIndividualState()
 }
 
 @Composable
@@ -61,6 +74,12 @@ fun HomeEstudiante(
 
     // Estado Simulacro Grupal
     var simulacroState by remember { mutableStateOf<SimulacroState>(SimulacroState.None) }
+
+    // Estado Simulacro Individual (ICFES)
+    var simulacroIndividualState by remember { mutableStateOf<SimulacroIndividualState>(SimulacroIndividualState.None) }
+    val simulacroViewModel: SimulacroEstudianteViewModel = viewModel()
+    val scope = rememberCoroutineScope()
+    var simulacroSeleccionado by remember { mutableStateOf<com.example.presaber.data.remote.SimulacroDisponible?>(null) }
 
     // Recuperar sesión activa si se cerró la app
     LaunchedEffect(Unit) {
@@ -93,6 +112,68 @@ fun HomeEstudiante(
 
     // MANEJO DE VISTAS
     when {
+        // --- FLUJO SIMULACRO INDIVIDUAL (ICFES) ---
+        simulacroIndividualState is SimulacroIndividualState.UltimoSimulacro -> {
+            com.example.presaber.ui.simulacro.student.UltimoSimulacroScreen(
+                idUsuario = usuario.documento,
+                onBack = { simulacroIndividualState = SimulacroIndividualState.None },
+                onComenzar = { simulacroIndividualState = SimulacroIndividualState.Disponibles }
+            )
+        }
+
+        simulacroIndividualState is SimulacroIndividualState.Disponibles -> {
+            com.example.presaber.ui.simulacro.student.SimulacrosDisponiblesScreen(
+                idEstudiante = usuario.documento,
+                onBack = { simulacroIndividualState = SimulacroIndividualState.None },
+                onSimulacroSelected = { simulacro ->
+                    simulacroSeleccionado = simulacro
+                    simulacroIndividualState = SimulacroIndividualState.Sesiones(simulacro)
+                }
+            )
+        }
+
+        simulacroIndividualState is SimulacroIndividualState.Sesiones -> {
+            val state = simulacroIndividualState as SimulacroIndividualState.Sesiones
+            com.example.presaber.ui.simulacro.student.SimulacroSesionesScreen(
+                simulacro = state.simulacro,
+                onBack = { simulacroIndividualState = SimulacroIndividualState.Disponibles },
+                onComenzarSesion = { idSesion, _ ->
+                    simulacroIndividualState = SimulacroIndividualState.SesionQuiz(
+                        idSesion = idSesion,
+                        sesionNombre = state.simulacro.simulacro.nombre
+                    )
+                }
+            )
+        }
+
+        simulacroIndividualState is SimulacroIndividualState.SesionQuiz -> {
+            val state = simulacroIndividualState as SimulacroIndividualState.SesionQuiz
+            com.example.presaber.ui.simulacro.student.SesionQuizScreen(
+                idSesion = state.idSesion,
+                idEstudiante = usuario.documento,
+                sesionNombre = state.sesionNombre,
+                onBack = {
+                    simulacroIndividualState = simulacroSeleccionado?.let {
+                        SimulacroIndividualState.Sesiones(it)
+                    } ?: SimulacroIndividualState.Disponibles
+                },
+                onFinish = {
+                    simulacroIndividualState = SimulacroIndividualState.SesionResultado(state.idSesion)
+                }
+            )
+        }
+
+        simulacroIndividualState is SimulacroIndividualState.SesionResultado -> {
+            val state = simulacroIndividualState as SimulacroIndividualState.SesionResultado
+            com.example.presaber.ui.simulacro.student.SesionResultadoScreen(
+                idSesion = state.idSesion,
+                idEstudiante = usuario.documento,
+                onAceptar = {
+                    simulacroIndividualState = SimulacroIndividualState.None
+                }
+            )
+        }
+
         // --- FLUJO SIMULACRO GRUPAL ---
 
         // 1. Pantalla de Selección/Historial
@@ -272,6 +353,20 @@ fun HomeEstudiante(
                                     // Al hacer click en "Unirse", cambiamos al estado del Simulacro
                                     onUnirseSimulacroClick = {
                                         simulacroState = SimulacroState.Unirse
+                                    },
+                                    // Al hacer click en "Simulacro", cargamos el último simulacro o mostramos disponibles
+                                    onSimulacroClick = {
+                                        simulacroViewModel.cargarUltimoSimulacro(usuario.documento)
+                                        // Esperamos un momento para que se cargue, luego decidimos qué mostrar
+                                        scope.launch {
+                                            delay(500)
+                                            val ultimo = simulacroViewModel.ultimoSimulacro.value
+                                            if (ultimo != null) {
+                                                simulacroIndividualState = SimulacroIndividualState.UltimoSimulacro
+                                            } else {
+                                                simulacroIndividualState = SimulacroIndividualState.Disponibles
+                                            }
+                                        }
                                     }
                                 )
                             }
