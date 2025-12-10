@@ -597,4 +597,235 @@ interface PresaberApi {
     suspend fun actualizarConfiguracionCurso(
         @Body request: ActualizarCursoRequest
     ): ActualizarCursoResponse
+
+    // ==================== SIMULACRO ADMIN ====================
+    
+    // Obtener todos los simulacros (admin)
+    @GET("api/simulacros")
+    suspend fun obtenerSimulacrosAdmin(
+        @Query("estado") estado: Boolean? = null,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 10
+    ): SimulacrosAdminResponse
+
+    // Obtener estructura ICFES
+    @GET("api/simulacros/estructura-icfes")
+    suspend fun obtenerEstructuraICFES(): EstructuraICFESResponse
+
+    // Obtener simulacro por ID
+    @GET("api/simulacros/{id_simulacro}")
+    suspend fun obtenerSimulacroPorId(
+        @Path("id_simulacro") idSimulacro: Int
+    ): SimulacroDetalleResponse
+
+    // Crear simulacro (solo estructura)
+    @POST("api/simulacros/crear")
+    suspend fun crearSimulacroAdmin(
+        @Body request: CrearSimulacroGrandeRequest
+    ): CrearSimulacroResponse
+
+    // Actualizar simulacro
+    @PUT("api/simulacros/{id_simulacro}")
+    suspend fun actualizarSimulacroAdmin(
+        @Path("id_simulacro") idSimulacro: Int,
+        @Body request: ActualizarSimulacroRequest
+    ): SimulacroResponseGrande
+
+    // Desactivar simulacro
+    @DELETE("api/simulacros/{id_simulacro}")
+    suspend fun desactivarSimulacro(
+        @Path("id_simulacro") idSimulacro: Int
+    ): Response<Unit>
+
+    // Asignar simulacro a cursos
+    @POST("api/simulacros/{id_simulacro}/asignar")
+    suspend fun asignarSimulacroACursos(
+        @Path("id_simulacro") idSimulacro: Int,
+        @Body request: AsignarSimulacroRequest
+    ): AsignarSimulacroResponse
+
+    // Agregar pregunta a sesión/área
+    @POST("api/simulacros/{id_simulacro}/sesiones/{numero_sesion}/areas/{id_area}/preguntas")
+    suspend fun agregarPreguntaASesion(
+        @Path("id_simulacro") idSimulacro: Int,
+        @Path("numero_sesion") numeroSesion: Int,
+        @Path("id_area") idArea: Int,
+        @Body request: AgregarPreguntaRequest
+    ): Response<Unit>
+
+    // Eliminar pregunta de sesión/área
+    @DELETE("api/simulacros/{id_simulacro}/sesiones/{numero_sesion}/areas/{id_area}/preguntas/{id_pregunta}")
+    suspend fun eliminarPreguntaDeSesion(
+        @Path("id_simulacro") idSimulacro: Int,
+        @Path("numero_sesion") numeroSesion: Int,
+        @Path("id_area") idArea: Int,
+        @Path("id_pregunta") idPregunta: Int
+    ): Response<Unit>
+
+    // Obtener todos los cursos (para asignación)
+    @GET("api/curso/institucion/{id_institucion}")
+    suspend fun obtenerCursosPorInstitucionAdmin(
+        @Path("id_institucion") idInstitucion: Int
+    ): List<CursoResponse>
 }
+
+// ==================== DATA MODELS PARA SIMULACRO ADMIN ====================
+
+data class SimulacroAdmin(
+    val id_simulacro: Int,
+    val nombre: String,
+    val descripcion: String?,
+    val fecha_creacion: String,
+    val estado: Boolean
+)
+
+data class SimulacrosAdminResponse(
+    val status: String,
+    val data: List<SimulacroAdmin>,
+    val total: Int,
+    val page: Int,
+    val limit: Int,
+    val totalPages: Int
+)
+
+data class EstructuraICFES(
+    val orden: Int,
+    val nombre: String,
+    val areas: List<AreaEstructura>
+)
+
+data class AreaEstructura(
+    val id_area: Int,
+    val nombre: String,
+    val cantidad: Int
+)
+
+data class EstructuraICFESResponse(
+    val status: String,
+    val data: List<EstructuraICFES>
+)
+
+data class CrearSimulacroGrandeRequest(
+    val nombre_simulacro: String,
+    val descripcion: String? = null,
+    val duracion_sesion_1: Int? = null,
+    val duracion_sesion_2: Int? = null,
+    val preguntas_sesion1: PreguntasSesion? = null,
+    val preguntas_sesion2: PreguntasSesion? = null
+)
+
+data class PreguntasSesion(
+    val matematicas: List<Int>? = null,
+    val lectura_critica: List<Int>? = null,
+    val sociales: List<Int>? = null,
+    val naturales: List<Int>? = null,
+    val ingles: List<Int>? = null
+)
+
+data class CrearSimulacroResponse(
+    val status: String,
+    val mensaje: String,
+    val data: SimulacroCreado
+)
+
+data class SimulacroCreado(
+    val simulacro: SimulacroInfo
+)
+
+data class SimulacroInfo(
+    val id_simulacro: Int,
+    val nombre: String,
+    val sesion1_preguntas: Int,
+    val sesion2_preguntas: Int,
+    val total_preguntas: Int
+)
+
+data class ActualizarSimulacroRequest(
+    val nombre: String? = null,
+    val descripcion: String? = null,
+    val estado: Boolean? = null
+)
+
+data class SimulacroResponseGrande(
+    val status: String,
+    val mensaje: String,
+    val data: SimulacroAdmin
+)
+
+data class SimulacroDetalleResponse(
+    val status: String,
+    val data: SimulacroCompleto
+)
+
+data class SimulacroCompleto(
+    val id_simulacro: Int,
+    val nombre: String,
+    val descripcion: String?,
+    val fecha_creacion: String,
+    val estado: Boolean,
+    val sesions: List<SesionCompleta>
+)
+
+data class SesionCompleta(
+    val id_sesion: Int,
+    val nombre: String,
+    val descripcion: String?,
+    val duracion_segundos: Int,
+    val orden: Int,
+    val sesion_areas: List<SesionAreaCompleta>
+)
+
+data class SesionAreaCompleta(
+    val id_sesion_area: Int,
+    val id_area: Int,
+    val orden_area: Int,
+    val cantidad_preguntas: Int,
+    val area: Area,
+    val sesion_preguntas: List<SesionPreguntaCompleta>
+)
+
+data class SesionPreguntaCompleta(
+    val id_sesion_pregunta: Int,
+    val orden_en_sesion: Int,
+    val puntaje_base: Double,
+    val pregunta: Pregunta
+)
+
+data class AsignarSimulacroRequest(
+    val asignaciones: List<AsignacionCurso>
+)
+
+data class AsignacionCurso(
+    val grado: String,
+    val grupo: String,
+    val cohorte: Int,
+    val id_institucion: Int,
+    val fecha_apertura_s1: String,
+    val fecha_cierre_s1: String,
+    val fecha_apertura_s2: String,
+    val fecha_cierre_s2: String
+)
+
+data class AsignarSimulacroResponse(
+    val status: String,
+    val mensaje: String,
+    val data: List<AsignacionResultado>
+)
+
+data class AsignacionResultado(
+    val id_curso_simulacro: Int,
+    val id_simulacro: Int,
+    val grado: String,
+    val grupo: String,
+    val cohorte: Int,
+    val fecha_apertura_s1: String,
+    val fecha_cierre_s1: String,
+    val fecha_apertura_s2: String,
+    val fecha_cierre_s2: String,
+    val actualizado: Boolean
+)
+
+data class AgregarPreguntaRequest(
+    val id_pregunta: Int,
+    val puntaje_base: Double = 0.5
+)
