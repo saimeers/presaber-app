@@ -3,25 +3,35 @@ package com.example.presaber.layout
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.presaber.R
-import com.google.firebase.auth.FirebaseAuth
-import androidx.compose.ui.platform.LocalInspectionMode
 import com.example.presaber.data.remote.Usuario
+import com.example.presaber.ui.layout.AccountDialog
+import com.google.firebase.auth.FirebaseAuth
+
+// Definimos los ítems de navegación del Admin
+private data class AdminNavItem(
+    val index: Int,
+    val iconRes: Int? = null,
+    val iconVector: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    val description: String
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,59 +39,74 @@ fun AdminLayout(
     selectedNavItem: Int = 0,
     onNavItemSelected: (Int) -> Unit = {},
     showAccountDialog: MutableState<Boolean> = remember { mutableStateOf(false) },
-    content: @Composable (PaddingValues) -> Unit,
-    usuario: Usuario
+    usuario: Usuario? = null,
+    onSignOut: () -> Unit = {},
+    content: @Composable (PaddingValues) -> Unit
 ) {
-    // Detecta si es un modo Preview
     val isInPreview = LocalInspectionMode.current
 
-    // Solo usa Firebase si NO es Preview
     val currentUser = if (!isInPreview) {
         try {
-            com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            FirebaseAuth.getInstance().currentUser
         } catch (e: IllegalStateException) {
             null
         }
-    } else {
-        null // 👈 evita inicializar Firebase en Preview
+    } else null
+
+    // Lista de navegación para el Administrador
+    val navItems = remember {
+        listOf(
+            AdminNavItem(0, iconVector = Icons.Default.Home, description = "Inicio"),
+            AdminNavItem(1, iconRes = R.drawable.icon_institution, description = "Instituciones"),
+            AdminNavItem(2, iconRes = R.drawable.icon_grupos, description = "Simulacros"),
+            AdminNavItem(3, iconRes = R.drawable.icon_user_settings, description = "Usuarios")
+        )
     }
 
     Scaffold(
+        containerColor = Color(0xFFF5F7FA), // [OPCIONAL] Color de fondo base para evitar cortes blancos
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    // Texto "PreSaber Admin" con tamaños diferentes
-                    Text(
-                        text = buildAnnotatedString {
-                            withStyle(SpanStyle(color = Color(0xFF1A1B21), fontSize = 22.sp)) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = buildAnnotatedString {
                                 append("Pre")
-                            }
-                            withStyle(SpanStyle(color = Color(0xFF5B7ABD), fontSize = 22.sp)) {
-                                append("Saber")
-                            }
-                            append(" ") // pequeño espacio antes de Admin
-                            withStyle(SpanStyle(color = Color(0xFF3F5D96), fontSize = 16.sp)) {
-                                append("Admin")
-                            }
-                        },
-                        fontWeight = FontWeight.SemiBold
-                    )
+                                withStyle(style = SpanStyle(color = Color(0xFF5B7ABD))) { append("Saber") }
+                            },
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1A1B21),
+                            lineHeight = 24.sp
+                        )
+                        Text(
+                            text = "ADMINISTRADOR",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF5B7BC6),
+                            letterSpacing = 1.sp,
+                            lineHeight = 10.sp
+                        )
+                    }
                 },
                 actions = {
-                    // Fondo elíptico con el ícono centrado
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .width(44.dp)
-                            .height(64.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.icon_user),
-                            contentDescription = "Usuario",
-                            tint = Color(0xFF1A1B21),
-                            modifier = Modifier.size(28.dp)
-                        )
+                    IconButton(onClick = { showAccountDialog.value = true }) {
+                        if (currentUser?.photoUrl != null) {
+                            AsyncImage(
+                                model = currentUser.photoUrl,
+                                contentDescription = "Perfil",
+                                modifier = Modifier.size(32.dp).clip(CircleShape)
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.icon_user),
+                                contentDescription = "Perfil",
+                                modifier = Modifier.size(32.dp).clip(CircleShape)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -90,121 +115,67 @@ fun AdminLayout(
             )
         },
         bottomBar = {
-
-            val indicatorColor = Color(0xFF5B7ABD) // azul seleccionado
-            val unselectedIconColor = Color(0xFF3A3843)
-            val selectedIconColor = Color.White
-
             NavigationBar(
-                containerColor = Color(0xFFE6EAF3),
-                tonalElevation = 0.dp,
-                modifier = Modifier.height(90.dp)  // barra grande
+                containerColor = Color(0xFFE2E7EE),
+                tonalElevation = 0.dp
             ) {
-
-                // ---------- HOME ----------
-                NavigationBarItem(
-                    selected = selectedNavItem == 0,
-                    onClick = { onNavItemSelected(0) },
-                    icon = {
-                        Box(
-                            modifier = Modifier.fillMaxHeight(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_home),
-                                contentDescription = "Inicio",
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = selectedIconColor,
-                        unselectedIconColor = unselectedIconColor,
-                        indicatorColor = indicatorColor
+                navItems.forEach { item ->
+                    NavigationBarItem(
+                        icon = {
+                            if (item.iconRes != null) {
+                                Icon(
+                                    painter = painterResource(id = item.iconRes),
+                                    contentDescription = item.description,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            } else if (item.iconVector != null) {
+                                Icon(
+                                    imageVector = item.iconVector,
+                                    contentDescription = item.description,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        },
+                        label = null,
+                        selected = selectedNavItem == item.index,
+                        onClick = { onNavItemSelected(item.index) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFF5B7BC6),
+                            indicatorColor = Color(0xFFD8E2F7),
+                            unselectedIconColor = Color.Gray
+                        ),
+                        alwaysShowLabel = false
                     )
-                )
-
-                // ---------- INSTITUTIONS ----------
-                NavigationBarItem(
-                    selected = selectedNavItem == 1,
-                    onClick = { onNavItemSelected(1) },
-                    icon = {
-                        Box(
-                            modifier = Modifier.fillMaxHeight(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_institution),
-                                contentDescription = "Instituciones",
-                                modifier = Modifier.size(26.dp)   // icono central más grande
-                            )
-                        }
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = selectedIconColor,
-                        unselectedIconColor = unselectedIconColor,
-                        indicatorColor = indicatorColor
-                    )
-                )
-
-                // ---------- SIMULACROS ----------
-                NavigationBarItem(
-                    selected = selectedNavItem == 2,
-                    onClick = { onNavItemSelected(2) },
-                    icon = {
-                        Box(
-                            modifier = Modifier.fillMaxHeight(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_grupos),
-                                contentDescription = "Simulacros",
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = selectedIconColor,
-                        unselectedIconColor = unselectedIconColor,
-                        indicatorColor = indicatorColor
-                    )
-                )
-
-                // ---------- USER ----------
-                NavigationBarItem(
-                    selected = selectedNavItem == 3,
-                    onClick = { onNavItemSelected(3) },
-                    icon = {
-                        Box(
-                            modifier = Modifier.fillMaxHeight(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_user_settings),
-                                contentDescription = "Usuario",
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = selectedIconColor,
-                        unselectedIconColor = unselectedIconColor,
-                        indicatorColor = indicatorColor
-                    )
-                )
+                }
+            }
+        },
+        content = { paddingValues ->
+            // --- CORRECCIÓN AQUÍ ---
+            // Quitamos .padding(paddingValues) de este Box.
+            // Solo pasamos paddingValues hacia abajo (al content).
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                content(paddingValues)
             }
         }
-        ,
-        content = content
     )
 
     if (showAccountDialog.value) {
-        AccountDialogAdmin(onDismiss = { showAccountDialog.value = false })
+        AccountDialogAdmin(
+            usuario = usuario,
+            onDismiss = { showAccountDialog.value = false },
+            onSignOut = onSignOut
+        )
     }
 }
 
 @Composable
-fun AccountDialogAdmin(onDismiss: () -> Unit) {
+fun AccountDialogAdmin(
+    usuario: Usuario?,
+    onDismiss: () -> Unit,
+    onSignOut: () -> Unit
+) {
     val currentUser = FirebaseAuth.getInstance().currentUser
 
     AlertDialog(
@@ -212,30 +183,22 @@ fun AccountDialogAdmin(onDismiss: () -> Unit) {
         containerColor = Color(0xFFF0F3FF),
         title = {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
                 IconButton(onClick = onDismiss) {
                     Icon(
                         painter = painterResource(R.drawable.icon_close),
-                        contentDescription = "Cerrar"
+                        contentDescription = "Cerrar",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
-                Image(
-                    painter = painterResource(R.drawable.icon_institution),
-                    contentDescription = "Logo Admin",
-                    modifier = Modifier.height(28.dp)
-                )
             }
         },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (currentUser?.photoUrl != null) {
@@ -243,7 +206,7 @@ fun AccountDialogAdmin(onDismiss: () -> Unit) {
                         model = currentUser.photoUrl,
                         contentDescription = "Foto de perfil",
                         modifier = Modifier
-                            .size(84.dp)
+                            .size(80.dp)
                             .clip(CircleShape)
                     )
                 } else {
@@ -251,7 +214,7 @@ fun AccountDialogAdmin(onDismiss: () -> Unit) {
                         painter = painterResource(id = R.drawable.icon_user_settings),
                         contentDescription = "Foto de perfil",
                         modifier = Modifier
-                            .size(84.dp)
+                            .size(80.dp)
                             .clip(CircleShape)
                     )
                 }
@@ -265,26 +228,21 @@ fun AccountDialogAdmin(onDismiss: () -> Unit) {
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = currentUser?.email ?: "admin@example.com",
+                    text = currentUser?.email ?: "admin@presaber.com",
                     color = Color.Gray,
                     fontSize = 14.sp
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
-                Divider(color = Color(0xFFB0C4DE), thickness = 1.dp)
-
+                Spacer(modifier = Modifier.height(24.dp))
+                Divider(color = Color(0xFFB0C4DE).copy(alpha = 0.5f))
                 Spacer(modifier = Modifier.height(12.dp))
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    AdminAccountOption(icon = R.drawable.icon_user_settings, text = "Configuración") {}
-                    AdminAccountOption(icon = R.drawable.icon_logout, text = "Cerrar sesión") {
-                        FirebaseAuth.getInstance().signOut()
-                        onDismiss()
-                    }
-                }
 
-                Spacer(modifier = Modifier.height(16.dp))
-                Divider(color = Color(0xFFB0C4DE), thickness = 1.dp)
-                Spacer(modifier = Modifier.height(8.dp))
+                // Opciones del menú
+                AdminAccountOption(icon = R.drawable.icon_user_settings, text = "Configuración Global") {}
+                AdminAccountOption(icon = R.drawable.icon_logout, text = "Cerrar sesión") {
+                    onSignOut()
+                    onDismiss()
+                }
             }
         },
         confirmButton = {}
@@ -297,50 +255,21 @@ fun AdminAccountOption(icon: Int, text: String, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = 4.dp),
+        colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF1A1B21))
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(
                 painter = painterResource(icon),
-                contentDescription = text,
-                tint = Color(0xFF1976D2),
-                modifier = Modifier.size(22.dp)
+                contentDescription = null,
+                tint = Color(0xFF5B7BC6),
+                modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
-            Text(text, color = Color.Black, fontSize = 15.sp)
+            Text(text, fontSize = 16.sp, fontWeight = FontWeight.Medium)
         }
     }
 }
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun AdminLayoutPreview() {
-    AdminLayout(
-        selectedNavItem = 1,
-        content = { paddingValues ->
-            // Aquí colocas un contenido de ejemplo solo para que se vea algo en la preview
-            Column(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Vista de Administrador",
-                    fontSize = 18.sp,
-                    color = Color(0xFF1A1B21)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Aquí se mostrará el contenido de cada pantalla",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-            }
-        }, usuario = Usuario("15151", "Perez", "Perez", "", "", "", 0, "", 0, 0 )
-    )
-}
-
-

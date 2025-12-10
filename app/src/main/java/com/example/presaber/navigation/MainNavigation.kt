@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.presaber.data.remote.UserRole
+import com.example.presaber.ui.admin.AdminNavHost
 import com.example.presaber.ui.auth.Login
 import com.example.presaber.ui.home.HomeEstudiante
 import com.example.presaber.ui.institution.InstitutionNavHost
@@ -125,7 +126,7 @@ private fun RoleBasedNavigation(
         }
 
         UserRole.ADMINISTRADOR -> {
-            com.example.presaber.ui.admin.AdminNavHost(
+            AdminNavHost(
                 usuario = usuario
             )
         }

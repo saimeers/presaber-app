@@ -241,11 +241,6 @@ data class DocenteInfo(
     val correo: String
 )
 
-data class InstitucionInfo(
-    val id_institucion: Int,
-    val nombre: String
-)
-
 data class CrearCursoRequest(
     val grado: String,
     val grupo: String,
@@ -667,6 +662,47 @@ interface PresaberApi {
     suspend fun obtenerCursosPorInstitucionAdmin(
         @Path("id_institucion") idInstitucion: Int
     ): List<CursoResponse>
+
+    // Obtener lista simple de instituciones (id y nombre)
+    @GET("api/instituciones")
+    suspend fun obtenerInstituciones(): InstitucionesSimpleResponse
+
+    // Obtener instituciones con información completa (incluye director)
+    @GET("api/instituciones/completas")
+    suspend fun obtenerInstitucionesCompletas(): InstitucionesCompletasResponse
+
+    // Crear institución con director
+    @POST("api/instituciones")
+    suspend fun crearInstitucion(
+        @Body request: CrearInstitucionRequest
+    ): CrearInstitucionResponse
+
+    // Obtener departamentos de Colombia
+    @GET("api/instituciones/departamentos")
+    suspend fun obtenerDepartamentos(): DepartamentosResponse
+
+    // Obtener municipios de un departamento
+    @GET("api/instituciones/departamentos/{id}/municipios")
+    suspend fun obtenerMunicipios(
+        @Path("id") idDepartamento: Int
+    ): MunicipiosResponse
+
+    // Crear administrador
+    @POST("api/usuarios/administrador")
+    suspend fun crearAdministrador(
+        @Body request: CrearAdministradorRequest
+    ): CrearAdministradorResponse
+
+    // Listar todos los administradores
+    @GET("api/usuarios/administradores")
+    suspend fun obtenerAdministradores(): AdministradoresResponse
+
+    // Obtener un administrador específico
+    @GET("api/usuarios/administrador/{documento}")
+    suspend fun obtenerAdministrador(
+        @Path("documento") documento: String
+    ): AdministradorResponse
+
 }
 
 // ==================== DATA MODELS PARA SIMULACRO ADMIN ====================
