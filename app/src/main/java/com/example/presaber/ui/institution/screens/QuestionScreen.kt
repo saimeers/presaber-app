@@ -9,9 +9,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.presaber.R
 import com.example.presaber.data.remote.Pregunta
-import com.example.presaber.ui.institution.components.*
 import com.example.presaber.ui.theme.PresaberTheme
-import com.example.presaber.layout.InstitutionLayout
+import com.example.presaber.ui.institution.components.AreaHeader
 import com.example.presaber.ui.institution.components.questions.LocalNavController
 import com.example.presaber.ui.institution.components.questions.QuestionItem
 import com.example.presaber.ui.institution.components.questions.QuestionsHeader

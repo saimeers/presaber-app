@@ -12,7 +12,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.presaber.ui.institution.components.*
+import com.example.presaber.ui.admin.components.AddInstitution
+import com.example.presaber.ui.admin.components.InstitutionDetail
+import com.example.presaber.ui.admin.components.InstitutionDetailCard
+import com.example.presaber.ui.admin.components.InstitutionList
+import com.example.presaber.ui.admin.components.RegisterFormInstitution
+import com.example.presaber.ui.admin.components.SearchBarInstitution
 import com.example.presaber.ui.layout.AdminLayout
 
 @OptIn(ExperimentalAnimationApi::class)
