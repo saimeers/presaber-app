@@ -17,24 +17,39 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.presaber.data.remote.RetrofitClient
 import com.example.presaber.data.remote.SesionDisponible
 import com.example.presaber.data.remote.SimulacroDisponible
 import com.example.presaber.ui.layout.StudentLayout
 
 @Composable
 fun SimulacroSesionesScreen(
+    idEstudiante: String,
     simulacro: SimulacroDisponible,
     onBack: () -> Unit,
-    onComenzarSesion: (Int, Int) -> Unit // id_sesion, id_curso_simulacro
+    onComenzarSesion: (Int, Int) -> Unit
 ) {
     var selectedNavItem by remember { mutableStateOf(0) }
     val showAccountDialog = remember { mutableStateOf(false) }
+    var racha by remember {mutableStateOf(0)}
+
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.api.obtenerRacha(idEstudiante)
+            if (response.success) {
+                racha = response.data.rachaVictorias
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     StudentLayout(
         selectedNavItem = selectedNavItem,
         onNavItemSelected = { },
         showAccountDialog = showAccountDialog,
         usuario = null,
+        racha = racha,
         onSignOut = {}
     ) { paddingValues ->
         Box(

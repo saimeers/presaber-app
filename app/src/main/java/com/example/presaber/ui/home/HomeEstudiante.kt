@@ -156,6 +156,7 @@ fun HomeEstudiante(
         simulacroIndividualState is SimulacroIndividualState.Sesiones -> {
             val state = simulacroIndividualState as SimulacroIndividualState.Sesiones
             com.example.presaber.ui.simulacro.student.SimulacroSesionesScreen(
+                idEstudiante = usuario.documento,
                 simulacro = state.simulacro,
                 onBack = { simulacroIndividualState = SimulacroIndividualState.Disponibles },
                 onComenzarSesion = { idSesion, _ ->

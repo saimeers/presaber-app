@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.presaber.data.remote.RetrofitClient
 import com.example.presaber.data.remote.SimulacroDisponible
 import com.example.presaber.ui.layout.StudentLayout
 import com.example.presaber.viewmodel.SimulacroEstudianteViewModel
@@ -30,9 +31,21 @@ fun SimulacrosDisponiblesScreen(
 ) {
     var selectedNavItem by remember { mutableStateOf(0) }
     val showAccountDialog = remember { mutableStateOf(false) }
+    var racha by remember {mutableStateOf(0)}
 
     LaunchedEffect(idEstudiante) {
         viewModel.cargarSimulacrosDisponibles(idEstudiante)
+    }
+
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.api.obtenerRacha(idEstudiante)
+            if (response.success) {
+                racha = response.data.rachaVictorias
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     val simulacrosDisponibles by viewModel.simulacrosDisponibles.collectAsState()
@@ -43,6 +56,7 @@ fun SimulacrosDisponiblesScreen(
         onNavItemSelected = { },
         showAccountDialog = showAccountDialog,
         usuario = null,
+        racha = racha,
         onSignOut = {}
     ) { paddingValues ->
         Box(

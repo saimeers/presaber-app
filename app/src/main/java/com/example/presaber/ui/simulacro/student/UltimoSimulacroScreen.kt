@@ -22,6 +22,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.presaber.data.remote.RetrofitClient
 import com.example.presaber.data.remote.UltimoSimulacroResponse
 import com.example.presaber.ui.layout.StudentLayout
 import com.example.presaber.viewmodel.SimulacroEstudianteViewModel
@@ -33,11 +34,23 @@ fun UltimoSimulacroScreen(
     onComenzar: () -> Unit,
     viewModel: SimulacroEstudianteViewModel = viewModel()
 ) {
+    var racha by remember {mutableStateOf(0)}
     var selectedNavItem by remember { mutableStateOf(0) }
     val showAccountDialog = remember { mutableStateOf(false) }
 
     LaunchedEffect(idUsuario) {
         viewModel.cargarUltimoSimulacro(idUsuario)
+    }
+
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.api.obtenerRacha(idUsuario)
+            if (response.success) {
+                racha = response.data.rachaVictorias
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     val ultimoSimulacro by viewModel.ultimoSimulacro.collectAsState()
@@ -47,6 +60,7 @@ fun UltimoSimulacroScreen(
         selectedNavItem = selectedNavItem,
         onNavItemSelected = { },
         showAccountDialog = showAccountDialog,
+        racha = racha,
         usuario = null,
         onSignOut = {}
     ) { paddingValues ->
