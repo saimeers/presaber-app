@@ -1,7 +1,7 @@
 # 📱 Presaber App
 
 [![📥 Descargar
-APK](https://img.shields.io/badge/Descargar-APK-blue?style=for-the-badge)](https://github.com/saimeers/presaber/releases/latest/download/presaber.apk)
+APK](https://img.shields.io/badge/Descargar-APK-blue?style=for-the-badge)](https://github.com/saimeers/presaber-app/releases/download/v0.1.0/presaber.apk)
 
 > Versión: **v0.1.0 (Debug)**\
 > Esta APK es una versión de prueba generada desde Android Studio. No es
