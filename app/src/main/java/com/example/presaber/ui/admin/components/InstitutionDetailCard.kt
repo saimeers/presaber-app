@@ -1,4 +1,4 @@
-package com.example.presaber.ui.institution.components
+package com.example.presaber.ui.admin.components
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween

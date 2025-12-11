@@ -1,5 +1,6 @@
-package com.example.presaber.ui.institution.components
+package com.example.presaber.ui.admin.components
 
+import android.util.Patterns
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
@@ -169,7 +170,7 @@ fun InstitutionStepContactScreen(
     var showErrors by remember { mutableStateOf(false) }
 
     fun isEmailValid(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        return Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
     fun isPhoneValid(number: String): Boolean {

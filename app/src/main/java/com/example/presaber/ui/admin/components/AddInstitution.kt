@@ -1,4 +1,4 @@
-package com.example.presaber.ui.institution.components
+package com.example.presaber.ui.admin.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
