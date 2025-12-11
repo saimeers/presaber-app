@@ -233,18 +233,25 @@ fun SesionCard(
             )
 
             // Botón Comenzar
+            val esCompletada = sesion.completada
+            val habilitada = sesion.habilitada && !esCompletada
+
             Button(
                 onClick = onComenzar,
-                enabled = sesion.habilitada,
+                enabled = habilitada,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (sesion.habilitada) Color(0xFF5685FF) else Color(0xFFBDBDBD),
+                    containerColor = if (habilitada) Color(0xFF5685FF) else Color(0xFFBDBDBD),
                     disabledContainerColor = Color(0xFFBDBDBD)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    text = if (sesion.habilitada) "Comenzar" else "No disponible",
+                    text = when {
+                        esCompletada -> "Completada"
+                        sesion.habilitada -> "Comenzar"
+                        else -> "No disponible"
+                    },
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )

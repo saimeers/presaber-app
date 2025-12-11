@@ -7,6 +7,8 @@ object SessionLocalCache {
     private const val PREF_NAME = "session_cache"
     private const val KEY_ANSWERS_PREFIX = "session_answers_"
     private const val KEY_INDEX_PREFIX = "session_index_"
+    private const val KEY_TIMER_PREFIX = "session_timer_"
+    private const val KEY_TIMER_SAVED_AT_PREFIX = "session_timer_saved_at_"
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -46,6 +48,34 @@ object SessionLocalCache {
         prefs(context).edit()
             .remove("$KEY_ANSWERS_PREFIX$sessionId")
             .remove("$KEY_INDEX_PREFIX$sessionId")
+            .remove("$KEY_TIMER_PREFIX$sessionId")
+            .remove("$KEY_TIMER_SAVED_AT_PREFIX$sessionId")
+            .apply()
+    }
+
+    fun saveTimer(context: Context, sessionId: Int, remainingSeconds: Int) {
+        val now = System.currentTimeMillis()
+        prefs(context).edit()
+            .putInt("$KEY_TIMER_PREFIX$sessionId", remainingSeconds)
+            .putLong("$KEY_TIMER_SAVED_AT_PREFIX$sessionId", now)
+            .apply()
+    }
+
+    fun loadTimer(context: Context, sessionId: Int): Int? {
+        val pref = prefs(context)
+        val remaining = pref.getInt("$KEY_TIMER_PREFIX$sessionId", -1)
+        if (remaining < 0) return null
+        val savedAt = pref.getLong("$KEY_TIMER_SAVED_AT_PREFIX$sessionId", 0L)
+        if (savedAt == 0L) return null
+        val elapsedSeconds = ((System.currentTimeMillis() - savedAt) / 1000).toInt()
+        val adjusted = remaining - elapsedSeconds
+        return if (adjusted > 0) adjusted else 0
+    }
+
+    fun clearTimer(context: Context, sessionId: Int) {
+        prefs(context).edit()
+            .remove("$KEY_TIMER_PREFIX$sessionId")
+            .remove("$KEY_TIMER_SAVED_AT_PREFIX$sessionId")
             .apply()
     }
 }
