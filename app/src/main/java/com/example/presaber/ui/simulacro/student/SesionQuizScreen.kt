@@ -4,6 +4,8 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -74,6 +76,46 @@ fun SesionQuizScreen(
         },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
+        },
+        bottomBar = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                OutlinedButton(
+                    onClick = { viewModel.irA(uiState.currentIndex - 1) },
+                    enabled = uiState.currentIndex > 0,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Rounded.NavigateBefore, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Anterior")
+                }
+
+                val isLast = uiState.currentIndex >= uiState.preguntas.lastIndex
+                Button(
+                    onClick = {
+                        if (isLast) {
+                            showFinishConfirm = true
+                        } else {
+                            viewModel.irA(uiState.currentIndex + 1)
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isLast) Color(0xFFEF5350) else Color(0xFF5685FF)
+                    )
+                ) {
+                    Text(if (isLast) "Terminar" else "Siguiente")
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        if (isLast) Icons.Rounded.CheckCircle else Icons.Rounded.NavigateNext,
+                        contentDescription = null
+                    )
+                }
+            }
         }
     ) { padding ->
         if (uiState.loading) {
@@ -109,7 +151,8 @@ fun SesionQuizScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             HeaderTimer(
@@ -128,44 +171,7 @@ fun SesionQuizScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                OutlinedButton(
-                    onClick = { viewModel.irA(uiState.currentIndex - 1) },
-                    enabled = uiState.currentIndex > 0,
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(Icons.Rounded.NavigateBefore, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Anterior")
-                }
-
-                val isLast = uiState.currentIndex >= uiState.preguntas.lastIndex
-                Button(
-                    onClick = {
-                        if (isLast) {
-                            showFinishConfirm = true
-                        } else {
-                            viewModel.irA(uiState.currentIndex + 1)
-                        }
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isLast) Color(0xFFEF5350) else Color(0xFF5685FF)
-                    )
-                ) {
-                    Text(if (isLast) "Terminar" else "Siguiente")
-                    Spacer(Modifier.width(8.dp))
-                    Icon(
-                        if (isLast) Icons.Rounded.CheckCircle else Icons.Rounded.NavigateNext,
-                        contentDescription = null
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 
@@ -247,9 +253,10 @@ private fun HeaderTimer(
 }
 
 private fun formatTimer(seconds: Int): String {
-    val m = seconds / 60
+    val h = seconds / 3600
+    val m = (seconds % 3600) / 60
     val s = seconds % 60
-    return String.format("%02d:%02d", m, s)
+    return String.format("%02d:%02d:%02d", h, m, s)
 }
 
 @Composable
@@ -297,4 +304,3 @@ private fun QuestionCard(
         }
     }
 }
-

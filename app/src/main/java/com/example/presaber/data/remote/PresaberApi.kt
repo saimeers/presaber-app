@@ -687,26 +687,26 @@ interface PresaberApi {
     ): List<SimulacroDisponible>
 
     // Obtener preguntas de una sesión para un estudiante
-    @GET("api/sesion/{id_sesion}/estudiante/{id_estudiante}")
+    @GET("api/sesiones/{id_sesion}/estudiante/{id_estudiante}")
     suspend fun obtenerPreguntasSesion(
         @Path("id_sesion") idSesion: Int,
         @Path("id_estudiante") idEstudiante: String
     ): PreguntasSesionResponse
 
     // Guardar / actualizar respuesta de pregunta
-    @POST("api/sesion/respuesta")
+    @POST("api/sesiones/respuesta")
     suspend fun responderPreguntaSesion(
         @Body request: ResponderPreguntaRequest
     ): GuardarRespuestaResponse
 
     // Finalizar sesión
-    @POST("api/sesion/finalizar")
+    @POST("api/sesiones/finalizar")
     suspend fun finalizarSesion(
         @Body request: FinalizarSesionRequest
     ): FinalizarSesionResponse
 
     // Obtener resultados de sesión
-    @GET("api/sesion/resultado/{id_sesion}/estudiante/{id_estudiante}")
+    @GET("api/sesiones/resultado/{id_sesion}/estudiante/{id_estudiante}")
     suspend fun obtenerResultadosSesion(
         @Path("id_sesion") idSesion: Int,
         @Path("id_estudiante") idEstudiante: String
@@ -769,6 +769,12 @@ interface PresaberApi {
 
     @POST("api/retos/crear")
     suspend fun crearReto(@Body request: CrearRetoRequest): CrearRetoResponse
+
+    @GET("api/simulacros/{id_simulacro}/estudiante/{id_estudiante}/resultados")
+    suspend fun obtenerResultadosSimulacro(
+        @Path("id_simulacro") idSimulacro: Int,
+        @Path("id_estudiante") idEstudiante: String
+    ): ResultadoSimulacroGlobalResponse
 }
 
 // ==================== DATA MODELS PARA SIMULACRO ADMIN ====================
@@ -1059,5 +1065,22 @@ data class SesionDisponible(
     val orden: Int,
     val habilitada: Boolean,
     val fecha_apertura: String?,
-    val fecha_cierre: String?
+    val fecha_cierre: String?,
+    val completada: Boolean = false
+)
+
+data class AreaResultadoSimulacro(
+    val id_area: Int,
+    val nombre_area: String,
+    val puntaje_obtenido: Double,
+    val puntaje_maximo: Double,
+    val porcentaje: Int
+)
+
+data class ResultadoSimulacroGlobalResponse(
+    val disponible: Boolean,
+    val puntaje_total_obtenido: Double?,
+    val puntaje_total_maximo: Double?,
+    val fecha_finalizacion: String?,
+    val areas: List<AreaResultadoSimulacro>?
 )

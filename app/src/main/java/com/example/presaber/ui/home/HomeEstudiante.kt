@@ -15,7 +15,6 @@ import com.example.presaber.ui.home.components.RetoList
 import com.example.presaber.ui.home.components.ResultQuiz
 import com.example.presaber.ui.home.screen.StudentCourseDetailScreen
 import com.example.presaber.ui.home.screen.StudentProfileScreen
-// CORRECCIÓN 1: Usamos un Alias para evitar conflicto con la clase local SubjectArea
 import com.example.presaber.ui.institution.components.questions.SubjectArea as InstitutionSubjectArea
 import com.example.presaber.ui.layout.StudentLayout
 import com.example.presaber.ui.pvp.*
@@ -51,6 +50,7 @@ sealed class SimulacroIndividualState {
     data class Sesiones(val simulacro: com.example.presaber.data.remote.SimulacroDisponible) : SimulacroIndividualState()
     data class SesionQuiz(val idSesion: Int, val sesionNombre: String) : SimulacroIndividualState()
     data class SesionResultado(val idSesion: Int) : SimulacroIndividualState()
+    data class ResultadoGlobal(val idSimulacro: Int) : SimulacroIndividualState()
 }
 
 @Composable
@@ -161,7 +161,7 @@ fun HomeEstudiante(
                 onComenzarSesion = { idSesion, _ ->
                     simulacroIndividualState = SimulacroIndividualState.SesionQuiz(
                         idSesion = idSesion,
-                        sesionNombre = state.simulacro.simulacro.nombre
+                        sesionNombre = state.simulacro.simulacro.sesions.find { it.id_sesion == idSesion }?.nombre ?: ""
                     )
                 }
             )
@@ -188,12 +188,38 @@ fun HomeEstudiante(
                 idSesion = state.idSesion,
                 idEstudiante = usuario.documento,
                 onAceptar = {
+                    val simulacro = simulacroSeleccionado
+                    if (simulacro != null) {
+                        // Verificar si es la última sesión
+                        val lastSession = simulacro.simulacro.sesions.maxByOrNull { it.orden }
+                        if (lastSession?.id_sesion == state.idSesion) {
+                            // Es la última -> Ir a Resultado Global
+                            simulacroIndividualState = SimulacroIndividualState.ResultadoGlobal(simulacro.simulacro.id_simulacro)
+                        } else {
+                            // No es la última -> Volver a la lista (refresh via Disponibles)
+                            simulacroIndividualState = SimulacroIndividualState.Disponibles
+                        }
+                    } else {
+                        simulacroIndividualState = SimulacroIndividualState.Disponibles
+                    }
+                }
+            )
+        }
+        
+        simulacroIndividualState is SimulacroIndividualState.ResultadoGlobal -> {
+            val state = simulacroIndividualState as SimulacroIndividualState.ResultadoGlobal
+            com.example.presaber.ui.simulacro.student.SimulacroResultadoGlobalScreen(
+                idSimulacro = state.idSimulacro,
+                usuario = usuario,
+                onContinuar = {
+                    // Finalizar flujo, volver a home
                     simulacroIndividualState = SimulacroIndividualState.None
                 }
             )
         }
 
         // --- FLUJO SIMULACRO GRUPAL (Igual) ---
+
         simulacroState is SimulacroState.Unirse -> {
             UnirseSimulacroScreen(
                 usuario = usuario,
