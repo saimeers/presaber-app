@@ -68,10 +68,11 @@ de Presaber:
   Nombre                              GitHub
   ----------------------------------- ------------------------------------------------
   **Saimer Adrian Saavedra Rojas**    [@saimeers](https://github.com/saimeers)
+  
+  **Andrés Felipe López Triana**     [@ElMopri](https://github.com/ElMopri)
 
   **Leydi Alejandra Durán**        [@LeydiD](https://github.com/LeydiD)
 
-  **Andrés Felipe López Triana**     [@ElMopri](https://github.com/ElMopri)
   ------------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
