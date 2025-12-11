@@ -14,7 +14,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.presaber.ui.components.AddCard
+import com.example.presaber.ui.admin.components.AddCard
 import com.example.presaber.ui.institution.components.teachers.Teacher
 import com.example.presaber.ui.institution.components.teachers.TeacherItem
 import com.example.presaber.ui.institution.components.teachers.teacherList

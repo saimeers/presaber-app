@@ -8,10 +8,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ArrowDownward
-import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.Assignment
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +25,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.presaber.data.remote.SimulacroAdmin
+import com.example.presaber.ui.admin.viewmodel.SimulacroAdminViewModel
+
+// Colores de la paleta
+private val PrimaryBlue = Color(0xFF5B7BC6)
+private val TextDark = Color(0xFF1A1B21)
+private val TextGray = Color(0xFF757575)
+private val BackgroundColor = Color(0xFFF8F9FA)
+private val EnabledGreen = Color(0xFF4CAF50)
+private val DisabledRed = Color(0xFFF44336)
 
 @Composable
 fun SimulacroListScreen(
@@ -35,120 +45,120 @@ fun SimulacroListScreen(
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
 
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Filtrar simulacros
+    val simulacrosFiltrados = remember(simulacros, searchQuery) {
+        if (searchQuery.isEmpty()) simulacros
+        else simulacros.filter { it.nombre.contains(searchQuery, ignoreCase = true) }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.cargarSimulacros()
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
-            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .background(BackgroundColor)
     ) {
-        // Título "Simulacro"
-        Text(
-            text = "Simulacros",
-            fontSize = 36.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1A1B21),
-            modifier = Modifier.padding(top=10.dp, bottom = 16.dp).align(Alignment.CenterHorizontally)
-
-        )
-
-        // Botón "Crear nuevo simulacro" - Morado claro con icono circular
-        Button(
-            onClick = onCrearSimulacro,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF9C88FF)
-            ),
-            shape = RoundedCornerShape(12.dp),
-            contentPadding = PaddingValues(16.dp)
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Icono circular con plus
-            Box(
+            // --- HEADER ---
+            Column(
                 modifier = Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.3f)),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(16.dp)
             ) {
-                Icon(
-                    Icons.Rounded.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = Color.White
+                Text(
+                    text = "Gestión de Simulacros",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = TextDark
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Buscador
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Buscar simulacro...", color = TextGray) },
+                    leadingIcon = { Icon(Icons.Default.Search, null, tint = PrimaryBlue) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = PrimaryBlue,
+                        unfocusedBorderColor = Color(0xFFE0E0E0)
+                    ),
+                    singleLine = true
                 )
             }
-            Spacer(Modifier.width(12.dp))
-            Text(
-                "Crear nuevo simulacro",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.White
-            )
-        }
 
-        // Lista de simulacros
-        if (loading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else if (error != null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Error: $error", color = MaterialTheme.colorScheme.error)
-            }
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-//                        modifier = Modifier.padding(bottom = 8.dp)
-                    ) {
-                        Text(
-                            text = "Simulacros",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF1A1B21)
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            IconButton(onClick = { /* Filtrar/Ordenar */ }) {
-                                Icon(
-                                    Icons.Rounded.ArrowDownward,
-                                    contentDescription = "Ordenar",
-                                    tint = Color(0xFF757575),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            IconButton(onClick = { /* Filtrar/Ordenar */ }) {
-                                Icon(
-                                    Icons.Rounded.Menu,
-                                    contentDescription = "Filtrar",
-                                    tint = Color(0xFF757575),
-                                    modifier = Modifier.size(20.dp)
-                                )
+            // --- LISTA ---
+            if (loading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = PrimaryBlue)
+                }
+            } else if (error != null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Error: $error", color = MaterialTheme.colorScheme.error)
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // Botón Crear dentro de la lista (como primer elemento o header)
+                    item {
+                        Button(
+                            onClick = onCrearSimulacro,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Crear Nuevo Simulacro", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Listado de Simulacros", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                    }
+
+                    if (simulacrosFiltrados.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 40.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("No hay simulacros registrados", color = TextGray)
                             }
                         }
-                    }
-                }
-
-                items(simulacros) { simulacro ->
-                    SimulacroItem(
-                        simulacro = simulacro,
-                        onClick = { onAsignarSimulacro(simulacro.id_simulacro) },
-                        onToggleEstado = {
-                            viewModel.actualizarEstadoSimulacro(
-                                simulacro.id_simulacro,
-                                !simulacro.estado
+                    } else {
+                        items(simulacrosFiltrados) { simulacro ->
+                            SimulacroItem(
+                                simulacro = simulacro,
+                                onClick = { onAsignarSimulacro(simulacro.id_simulacro) },
+                                onToggleEstado = {
+                                    viewModel.actualizarEstadoSimulacro(
+                                        simulacro.id_simulacro,
+                                        !simulacro.estado
+                                    )
+                                }
                             )
                         }
-                    )
+                    }
+
+                    item { Spacer(Modifier.height(80.dp)) } // Espacio extra al final
                 }
             }
         }
@@ -157,7 +167,7 @@ fun SimulacroListScreen(
 
 @Composable
 fun SimulacroItem(
-    simulacro: com.example.presaber.data.remote.SimulacroAdmin,
+    simulacro: SimulacroAdmin,
     onClick: () -> Unit,
     onToggleEstado: () -> Unit
 ) {
@@ -165,100 +175,70 @@ fun SimulacroItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = if (simulacro.estado) Color(0xFF2196F3) else Color(0xFFF5F5F5)
-        ),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Icono
+            Surface(
+                color = if (simulacro.estado) PrimaryBlue.copy(alpha = 0.1f) else Color(0xFFEEEEEE),
+                shape = CircleShape,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Rounded.Assignment,
+                        contentDescription = null,
+                        tint = if (simulacro.estado) PrimaryBlue else Color.Gray,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Textos
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = simulacro.nombre,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (simulacro.estado) Color.White else Color(0xFF1A1B21)
+                    color = TextDark,
+                    maxLines = 1
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = if (simulacro.estado) "Habilitado" else "Deshabilitado",
-                    fontSize = 14.sp,
-                    color = if (simulacro.estado) Color.White.copy(alpha = 0.9f) else Color(0xFF757575)
-                )
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Estado como Chip pequeño
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(if (simulacro.estado) EnabledGreen else DisabledRed)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (simulacro.estado) "Habilitado" else "Deshabilitado",
+                        fontSize = 13.sp,
+                        color = TextGray
+                    )
+                }
             }
+
+            // Menú opciones
             IconButton(onClick = onToggleEstado) {
                 Icon(
-                    Icons.Rounded.MoreVert,
+                    imageVector = Icons.Default.MoreVert,
                     contentDescription = "Opciones",
-                    tint = if (simulacro.estado) Color.White else Color(0xFF757575)
+                    tint = TextGray
                 )
             }
         }
     }
-}
-
-
-// -----------------------------
-// PREVIEW
-// -----------------------------
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewSimulacroListScreen() {
-
-    // Fake ViewModel que no llama Retrofit ni corrutinas
-    val fakeViewModel = object : SimulacroAdminViewModel() {
-
-        init {
-            _simulacros.value = listOf(
-                SimulacroAdmin(
-                    id_simulacro = 1,
-                    nombre = "Simulacro PreSaber #1",
-                    estado = true,
-                    descripcion = "",
-                    fecha_creacion = ""
-                ),
-                SimulacroAdmin(
-                    id_simulacro = 2,
-                    nombre = "Simulacro Final Lenguaje",
-                    estado = false,
-                    descripcion = "",
-                    fecha_creacion = ""
-                ),
-                SimulacroAdmin(
-                    id_simulacro = 3,
-                    nombre = "Simulacro Diagnóstico Inicial",
-                    estado = true,
-                    descripcion = "",
-                    fecha_creacion = ""
-                )
-            )
-        }
-
-        override fun cargarSimulacros() {
-            // No hace nada en preview
-        }
-
-        override fun actualizarEstadoSimulacro(idSimulacro: Int, estado: Boolean) {
-            // Simula el cambio de estado
-            val listaActual = _simulacros.value.toMutableList()
-            val index = listaActual.indexOfFirst { it.id_simulacro == idSimulacro }
-            if (index != -1) {
-                val simulacro = listaActual[index]
-                listaActual[index] = simulacro.copy(estado = estado)
-                _simulacros.value = listaActual
-            }
-        }
-    }
-
-    SimulacroListScreen(
-        onCrearSimulacro = {},
-        onAsignarSimulacro = {},
-        viewModel = fakeViewModel
-    )
 }

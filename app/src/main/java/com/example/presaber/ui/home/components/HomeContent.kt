@@ -69,8 +69,8 @@ fun HomeContent(
         ),
         SubjectArea(
             4,
-            "Sociales y Ciudadanas",
-            "Comprende la sociedad y tu rol como ciudadano",
+            "Ciencias Sociales y Ciudadanas",
+            "Comprende la sociedad",
             R.drawable.img_sociales,
             Color(0xFF9E9E9E)
         )

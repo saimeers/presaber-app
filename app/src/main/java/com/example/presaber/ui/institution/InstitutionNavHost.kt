@@ -22,6 +22,7 @@ import com.example.presaber.data.remote.Usuario
 import com.example.presaber.layout.InstitutionLayout
 import com.example.presaber.ui.institution.components.questions.LocalNavController
 import com.example.presaber.ui.institution.screens.*
+import com.example.presaber.ui.home.screen.StudentProfileScreen
 import com.example.presaber.ui.simulacro.*
 import com.example.presaber.ui.simulacro.teacher.CrearSimulacroScreen
 import com.example.presaber.ui.simulacro.teacher.SimulacroEsperaScreen
@@ -109,6 +110,7 @@ fun InstitutionNavHost(
                         )
                     }
 
+                    // --- CAMBIO 1: Manejar el click en estudiante ---
                     composable(
                         route = "courseDetail/{grado}/{grupo}/{cohorte}/{idInstitucion}",
                         arguments = listOf(
@@ -123,13 +125,27 @@ fun InstitutionNavHost(
                         val cohorte = backStackEntry.arguments?.getInt("cohorte") ?: 0
                         val idInst = backStackEntry.arguments?.getInt("idInstitucion") ?: 0
 
-                        // Asegúrate de importar CourseDetailScreen
                         CourseDetailScreen(
                             grado = grado,
                             grupo = grupo,
                             cohorte = cohorte,
                             idInstitucion = idInst,
                             userRole = usuario.rol,
+                            onBack = { navController.popBackStack() },
+                            onStudentClick = { studentId -> // Navegar al perfil
+                                navController.navigate("studentProfile/$studentId")
+                            }
+                        )
+                    }
+
+                    // --- CAMBIO 2: Agregar ruta para el perfil ---
+                    composable(
+                        route = "studentProfile/{studentId}",
+                        arguments = listOf(navArgument("studentId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val id = backStackEntry.arguments?.getString("studentId") ?: ""
+                        StudentProfileScreen(
+                            studentId = id,
                             onBack = { navController.popBackStack() }
                         )
                     }
@@ -186,9 +202,7 @@ fun InstitutionNavHost(
                     composable("gamification") {
                         SimulacroHomeScreen(
                             idDocente = usuario.documento,
-                            // Ya no pasamos grado/grupo aquí, la pantalla los obtiene
                             onCrearSimulacro = { cursoSeleccionado ->
-                                // NAVEGAMOS PASANDO LOS DATOS DEL CURSO SELECCIONADO
                                 navController.navigate("crearSimulacro/${cursoSeleccionado.grado}/${cursoSeleccionado.grupo}/${cursoSeleccionado.cohorte}/${cursoSeleccionado.idInstitucion}")
                             },
                             onVerSimulacro = { idSimulacro ->
@@ -228,7 +242,6 @@ fun InstitutionNavHost(
                         )
                     }
 
-                    // Sala de espera
                     composable(
                         route = "simulacroEspera/{idSimulacro}",
                         arguments = listOf(navArgument("idSimulacro") { type = NavType.IntType })
@@ -245,7 +258,6 @@ fun InstitutionNavHost(
                         )
                     }
 
-                    // Progreso en curso
                     composable(
                         route = "simulacroProgreso/{idSimulacro}",
                         arguments = listOf(navArgument("idSimulacro") { type = NavType.IntType })
@@ -262,7 +274,6 @@ fun InstitutionNavHost(
                         )
                     }
 
-                    // Podio final
                     composable(
                         route = "simulacroPodio/{idSimulacro}",
                         arguments = listOf(navArgument("idSimulacro") { type = NavType.IntType })
@@ -278,14 +289,12 @@ fun InstitutionNavHost(
                         )
                     }
 
-                    // Detalle de simulacro (redirecciona según estado)
                     composable(
                         route = "simulacroDetalle/{idSimulacro}",
                         arguments = listOf(navArgument("idSimulacro") { type = NavType.IntType })
                     ) { backStackEntry ->
                         val idSimulacro = backStackEntry.arguments?.getInt("idSimulacro") ?: 0
 
-                        // Obtener el estado del simulacro y redirigir a la pantalla correcta
                         LaunchedEffect(idSimulacro) {
                             try {
                                 val response = RetrofitClient.api.obtenerSimulacro(idSimulacro)
@@ -309,7 +318,6 @@ fun InstitutionNavHost(
                             }
                         }
 
-                        // Mostrar loading mientras se determina el estado
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center

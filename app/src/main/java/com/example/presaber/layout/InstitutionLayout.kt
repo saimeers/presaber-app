@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.presaber.R
 import com.example.presaber.data.remote.Usuario
-import com.example.presaber.ui.layout.AccountDialog
+import com.example.presaber.layout.components.AccountDialog
 import com.google.firebase.auth.FirebaseAuth
 
 private data class NavItem(
@@ -184,7 +184,8 @@ fun InstitutionLayout(
         AccountDialog(
             usuario = usuario,
             onDismiss = { showAccountDialog.value = false },
-            onSignOut = onSignOut
+            onSignOut = onSignOut,
+            isInPreview = isInPreview
         )
     }
 }

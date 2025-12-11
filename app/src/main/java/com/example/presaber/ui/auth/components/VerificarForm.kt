@@ -35,20 +35,20 @@ fun VerificarForm(onVerificado: (String, String, String, String) -> Unit) {
     val context = LocalContext.current
     val currentYear = Calendar.getInstance().get(Calendar.YEAR).toString()
 
-    LaunchedEffect(instituciones.isEmpty()) {
-        if (instituciones.isEmpty()) {
-            try {
-                instituciones = RetrofitClient.api.getInstituciones()
-                isVerifying = true
-            } catch (e: Exception) {
-                if (e !is kotlinx.coroutines.CancellationException) {
-                    Toast.makeText(context, "Error al cargar instituciones", Toast.LENGTH_SHORT).show()
-                }
-            } finally {
-                isVerifying = false
+    LaunchedEffect(Unit) {
+        isVerifying = true
+        try {
+            val resp = RetrofitClient.api.getInstituciones()
+            instituciones = resp.data
+        } catch (e: Exception) {
+            if (e !is kotlinx.coroutines.CancellationException) {
+                Toast.makeText(context, "Error al cargar instituciones", Toast.LENGTH_SHORT).show()
             }
+        } finally {
+            isVerifying = false
         }
     }
+
 
     Column(
         modifier = Modifier.fillMaxWidth(),

@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presaber.R
 import com.example.presaber.ui.theme.PresaberTheme
-import com.example.presaber.ui.components.AddCard
+import com.example.presaber.ui.admin.components.AddCard
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavController

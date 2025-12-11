@@ -11,6 +11,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.presaber.data.remote.UserRole
 import com.example.presaber.ui.admin.AdminNavHost
 import com.example.presaber.ui.auth.Login
+import com.example.presaber.ui.components.LoadingScreen
+import com.example.presaber.ui.components.WelcomeScreen
 import com.example.presaber.ui.home.HomeEstudiante
 import com.example.presaber.ui.institution.InstitutionNavHost
 import com.example.presaber.viewmodel.AuthState
@@ -21,39 +23,60 @@ fun MainNavigation(codigoSalaCompartido: String? = null) {
     val authViewModel: AuthViewModel = viewModel()
     val authState by authViewModel.authState.collectAsState()
 
+    var showWelcomeScreen by remember { mutableStateOf(true) }
+
     // Guardar el código para usarlo después del login
     var codigoPendiente by remember { mutableStateOf(codigoSalaCompartido) }
 
     when (val state = authState) {
         is AuthState.Loading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            // Tu pantalla de carga profesional se mantiene aquí
+            LoadingScreen()
         }
 
         is AuthState.NotAuthenticated -> {
-            LoginScreen(
-                authViewModel = authViewModel,
-                codigoSalaCompartido = codigoPendiente
-            )
+            if (showWelcomeScreen) {
+                // Si es la primera vez (o decidimos mostrarla), mostramos la bienvenida
+                WelcomeScreen(
+                    onNavigateToLogin = {
+                        // Cuando termina la animación, ocultamos la bienvenida
+                        showWelcomeScreen = false
+                        // Y opcionalmente, marcamos en DataStore que ya no es la primera vez
+                    }
+                )
+            } else {
+                // Si ya pasaron la bienvenida, mostramos el Login
+                LoginScreen(
+                    authViewModel = authViewModel,
+                    codigoSalaCompartido = codigoPendiente
+                )
+            }
         }
 
         is AuthState.Authenticated -> {
+            // Si ya están autenticados, no mostramos bienvenida, vamos directo al rol
             RoleBasedNavigation(
                 usuario = state.usuario,
                 codigoSalaCompartido = codigoPendiente,
                 onSignOut = {
-                    codigoPendiente = null // Limpiar al cerrar sesión
+                    codigoPendiente = null
                     authViewModel.signOut()
+                    // Opcional: al cerrar sesión, ¿quieres volver a mostrar la bienvenida?
+                    // showWelcomeScreen = true
                 }
             )
         }
 
         is AuthState.Error -> {
-            LoginScreen(
-                authViewModel = authViewModel,
-                codigoSalaCompartido = codigoPendiente
-            )
+            // Puedes decidir si mostrar bienvenida o login directo en caso de error inicial
+            if (showWelcomeScreen) {
+                WelcomeScreen(onNavigateToLogin = { showWelcomeScreen = false })
+            } else {
+                LoginScreen(
+                    authViewModel = authViewModel,
+                    codigoSalaCompartido = codigoPendiente
+                )
+            }
         }
     }
 }
@@ -127,7 +150,8 @@ private fun RoleBasedNavigation(
 
         UserRole.ADMINISTRADOR -> {
             AdminNavHost(
-                usuario = usuario
+                usuario = usuario,
+                onSignOut = onSignOut
             )
         }
 

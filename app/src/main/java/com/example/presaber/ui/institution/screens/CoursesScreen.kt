@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.presaber.data.remote.Usuario
-import com.example.presaber.ui.components.AddCard
+import com.example.presaber.ui.admin.components.AddCard
 import com.example.presaber.ui.institution.components.courses.CourseCard
 import com.example.presaber.ui.institution.viewmodel.CoursesViewModel
 

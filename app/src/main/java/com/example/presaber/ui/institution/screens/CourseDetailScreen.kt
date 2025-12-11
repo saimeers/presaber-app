@@ -53,7 +53,8 @@ fun CourseDetailScreen(
     cohorte: Int,
     idInstitucion: Int,
     userRole: Int,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onStudentClick: (String) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
 
@@ -148,7 +149,12 @@ fun CourseDetailScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = PrimaryBlue)
             } else {
                 when (selectedTab) {
-                    0 -> ParticipantesTab(participantes, searchQuery) { searchQuery = it }
+                    0 -> ParticipantesTab(
+                        participantes,
+                        searchQuery,
+                        { searchQuery = it },
+                        onStudentClick
+                    )
                     1 -> RankingTab(ranking)
                     2 -> ConfiguracionTab(
                         grado, grupo, cohorte, idInstitucion,
@@ -164,9 +170,13 @@ fun CourseDetailScreen(
     }
 }
 
-// ... (Tabs de Participantes y Ranking se mantienen igual) ...
 @Composable
-fun ParticipantesTab(participantes: List<ParticipanteCurso>, searchQuery: String, onSearchChange: (String) -> Unit) {
+fun ParticipantesTab(
+    participantes: List<ParticipanteCurso>,
+    searchQuery: String,
+    onSearchChange: (String) -> Unit,
+    onStudentClick: (String) -> Unit // <--- Recibimos el callback
+) {
     val filteredList = participantes.filter { it.nombre_completo.contains(searchQuery, ignoreCase = true) }
     Column(modifier = Modifier.padding(16.dp)) {
         OutlinedTextField(
@@ -177,7 +187,17 @@ fun ParticipantesTab(participantes: List<ParticipanteCurso>, searchQuery: String
             colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedBorderColor = PrimaryBlue, unfocusedBorderColor = Color(0xFFE0E0E0))
         )
         Spacer(Modifier.height(16.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) { items(filteredList) { p -> ParticipanteCard(p) } }
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(filteredList) { p ->
+                val isStudent = p.rol.id == 3
+                ParticipanteCard(
+                    p,
+                    onClick = {
+                        if (isStudent) onStudentClick(p.documento)
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -187,7 +207,6 @@ fun RankingTab(ranking: List<EstudianteRanking>) {
     else { LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { items(ranking) { estudiante -> RankingCard(estudiante) } } }
 }
 
-// --- TAB CONFIGURACIÓN CON LÓGICA DE ROLES ---
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -201,10 +220,6 @@ fun ConfiguracionTab(
 ) {
     var clave by remember { mutableStateOf(claveInicial) }
     var docenteSeleccionado by remember { mutableStateOf(listaDocentes.find { it.documento == docenteInicialId }) }
-
-    // Si no es director, buscamos el nombre del docente actual manualmente (ya que listaDocentes puede estar vacía para docentes)
-    // O mostramos "Docente Asignado" genérico si no tenemos el dato.
-    // Para simplificar, si es docente, mostramos el campo bloqueado.
 
     var expandedDocente by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
@@ -350,11 +365,15 @@ fun ConfiguracionTab(
     }
 }
 
-// ... (Componentes auxiliares ParticipanteCard, RankingCard, Avatar se mantienen igual) ...
-// Asegúrate de copiarlos del mensaje anterior si no los tienes en este archivo.
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ParticipanteCard(p: ParticipanteCurso) {
-    Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
+fun ParticipanteCard(p: ParticipanteCurso, onClick: () -> Unit = {}) { // <--- Added onClick
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(1.dp),
+        onClick = onClick // <--- Click action
+    ) {
         Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Avatar(p.photoURL, p.nombre)
             Spacer(Modifier.width(12.dp))

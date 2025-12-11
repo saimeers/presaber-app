@@ -17,10 +17,18 @@ import com.example.presaber.data.remote.Usuario
 import com.example.presaber.ui.admin.simulacro.*
 import com.example.presaber.ui.institution.screens.CreateQuestionScreen
 import com.example.presaber.layout.AdminLayout
+import com.example.presaber.ui.admin.screens.AdminsScreen
+import com.example.presaber.ui.admin.screens.CreateAdminScreen
+import com.example.presaber.ui.admin.screens.CreateInstitutionScreen
+import com.example.presaber.ui.admin.screens.CreateRetoScreen
+import com.example.presaber.ui.admin.screens.InstitutionDetailScreen
+import com.example.presaber.ui.admin.screens.InstitutionsListScreen
+import com.example.presaber.ui.admin.screens.RetosListScreen
 
 @Composable
 fun AdminNavHost(
-    usuario: Usuario
+    usuario: Usuario,
+    onSignOut: () -> Unit
 ) {
     val navController = rememberNavController()
     var selectedNavItem by remember { mutableStateOf(0) }
@@ -61,6 +69,7 @@ fun AdminNavHost(
             }
         },
         usuario = usuario,
+        onSignOut = onSignOut,
         content = { paddingValues ->
             // 1. El NavHost debe llenar el tamaño disponible
             NavHost(
@@ -74,18 +83,47 @@ fun AdminNavHost(
                 // PANTALLA: Home (Dashboard)
                 // ==========================================
                 composable("home") {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Dashboard Admin - Próximamente")
-                    }
+                    RetosListScreen(
+                        onCreateReto = {
+                            navController.navigate("createReto")
+                        }
+                    )
                 }
 
-                // ==========================================
-                // PANTALLA: Instituciones
-                // ==========================================
+                composable("createReto") {
+                    CreateRetoScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                // Pantallas instituciones
                 composable("instituciones") {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Gestión de Instituciones")
-                    }
+                    InstitutionsListScreen(
+                        onAddInstitution = {
+                            navController.navigate("createInstitution")
+                        },
+                        onInstitutionClick = { id ->
+                            // Navegar al detalle
+                            navController.navigate("institutionDetail/$id")
+                        }
+                    )
+                }
+
+                composable(
+                    route = "institutionDetail/{id}",
+                    arguments = listOf(androidx.navigation.navArgument("id") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val id = backStackEntry.arguments?.getInt("id") ?: 0
+                    InstitutionDetailScreen(
+                        idInstitucion = id,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("createInstitution") {
+                    CreateInstitutionScreen(
+                        onBack = { navController.popBackStack() }
+                    )
                 }
 
                 // ==========================================
@@ -102,13 +140,23 @@ fun AdminNavHost(
                     )
                 }
 
-                // ==========================================
-                // PANTALLA: Usuario
-                // ==========================================
+                // Pantallas usuario administrador
                 composable("usuario") {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Perfil de Administrador")
-                    }
+                    AdminsScreen(
+                        onAddAdmin = {
+                            navController.navigate("createAdmin")
+                        }
+                    )
+                }
+
+                // Crear administrador
+                composable("createAdmin") {
+                    CreateAdminScreen(
+                        idInstitucion = usuario.institucion,
+                        onBack = {
+                            navController.popBackStack()
+                        }
+                    )
                 }
 
                 // ... (Rutas de Crear Simulacro, Asignar, Preguntas se mantienen igual) ...
@@ -155,7 +203,6 @@ fun AdminNavHost(
                     )
                 }
 
-                // Rutas de Preguntas... (Mantener igual)
             }
         }
     )

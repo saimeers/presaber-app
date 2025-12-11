@@ -1,4 +1,4 @@
-package com.example.presaber.ui.components
+package com.example.presaber.ui.admin.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background

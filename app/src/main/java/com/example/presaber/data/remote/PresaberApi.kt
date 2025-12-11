@@ -10,7 +10,16 @@ import java.io.File
 import retrofit2.Response
 
 
-data class Institucion(val id_institucion: Int, val nombre: String)
+data class InstitucionesResponse(
+    val success: Boolean,
+    val data: List<Institucion>
+)
+
+data class Institucion(
+    val id_institucion: Int,
+    val nombre: String
+)
+
 data class Curso(val id: String, val nombre: String)
 data class VerificacionRequest(
     val id_institucion: String,
@@ -275,7 +284,7 @@ data class ActualizarEstadoResponse(
 
 interface PresaberApi {
     @GET("api/institucion")
-    suspend fun getInstituciones(): List<Institucion>
+    suspend fun getInstituciones(): InstitucionesResponse
 
     @GET("api/curso/curso/institucion/{id_institucion}")
     suspend fun getCursos(@Path("id_institucion") id: Int): List<Curso>
@@ -704,25 +713,25 @@ interface PresaberApi {
     ): ResultadoSesionResponse
 
     // Obtener lista simple de instituciones (id y nombre)
-    @GET("api/instituciones")
+    @GET("api/institucion")
     suspend fun obtenerInstituciones(): InstitucionesSimpleResponse
 
     // Obtener instituciones con información completa (incluye director)
-    @GET("api/instituciones/completas")
+    @GET("api/institucion/completas")
     suspend fun obtenerInstitucionesCompletas(): InstitucionesCompletasResponse
 
     // Crear institución con director
-    @POST("api/instituciones")
+    @POST("api/institucion")
     suspend fun crearInstitucion(
         @Body request: CrearInstitucionRequest
     ): CrearInstitucionResponse
 
     // Obtener departamentos de Colombia
-    @GET("api/instituciones/departamentos")
+    @GET("api/institucion/departamentos")
     suspend fun obtenerDepartamentos(): DepartamentosResponse
 
     // Obtener municipios de un departamento
-    @GET("api/instituciones/departamentos/{id}/municipios")
+    @GET("api/institucion/departamentos/{id}/municipios")
     suspend fun obtenerMunicipios(
         @Path("id") idDepartamento: Int
     ): MunicipiosResponse
@@ -743,6 +752,23 @@ interface PresaberApi {
         @Path("documento") documento: String
     ): AdministradorResponse
 
+    // Obtener solo la racha (rápido, para el header o home)
+    @GET("api/estudiantes/{documento}/racha")
+    suspend fun obtenerRacha(
+        @Path("documento") documento: String
+    ): RachaResponse
+
+    // Obtener el perfil completo (estadísticas, gráficos, historial)
+    @GET("api/estudiantes/{documento}/perfil")
+    suspend fun obtenerPerfil(
+        @Path("documento") documento: String
+    ): PerfilResponse
+
+    @GET("api/temas/listar/{idArea}")
+    suspend fun obtenerTemasPorArea(@Path("idArea") idArea: Int): TemasResponse
+
+    @POST("api/retos/crear")
+    suspend fun crearReto(@Body request: CrearRetoRequest): CrearRetoResponse
 }
 
 // ==================== DATA MODELS PARA SIMULACRO ADMIN ====================

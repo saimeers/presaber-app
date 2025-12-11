@@ -1,8 +1,11 @@
 package com.example.presaber.ui.home
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -10,6 +13,10 @@ import com.example.presaber.data.remote.*
 import com.example.presaber.ui.home.components.Quiz
 import com.example.presaber.ui.home.components.RetoList
 import com.example.presaber.ui.home.components.ResultQuiz
+import com.example.presaber.ui.home.screen.StudentCourseDetailScreen
+import com.example.presaber.ui.home.screen.StudentProfileScreen
+// CORRECCIÓN 1: Usamos un Alias para evitar conflicto con la clase local SubjectArea
+import com.example.presaber.ui.institution.components.questions.SubjectArea as InstitutionSubjectArea
 import com.example.presaber.ui.layout.StudentLayout
 import com.example.presaber.ui.pvp.*
 import com.example.presaber.ui.simulacro.student.*
@@ -18,6 +25,7 @@ import com.example.presaber.viewmodel.SimulacroEstudianteViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+// ... (Tus sealed classes se mantienen igual) ...
 sealed class PvPState {
     object Home : PvPState()
     object CrearSala : PvPState()
@@ -32,11 +40,7 @@ sealed class SimulacroState {
     object Unirse : SimulacroState()
     data class SalaEspera(val idSimulacro: Int) : SimulacroState()
     data class Quiz(val idSimulacro: Int) : SimulacroState()
-
-    // NUEVO: Estado intermedio donde se ve el progreso de los demás
     data class EsperandoResultados(val idSimulacro: Int) : SimulacroState()
-
-    // Estado final: Podio
     data class Podio(val idSimulacro: Int) : SimulacroState()
 }
 
@@ -59,35 +63,52 @@ fun HomeEstudiante(
     var selectedNavItem by remember { mutableStateOf(0) }
     val showAccountDialog = remember { mutableStateOf(false) }
 
-    // Estados Retos normales
-    var selectedArea by remember { mutableStateOf<SubjectArea?>(null) }
+    var racha by remember { mutableStateOf(0) }
+
+    // --- NUEVO: Estado para saber si estamos viendo el perfil de un compañero ---
+    var viewingStudentId by remember { mutableStateOf<String?>(null) }
+
+    // CORRECCIÓN 2: selectedArea ahora usa explícitamente el SubjectArea del paquete actual (ui.home)
+    // Esto arregla el "Argument type mismatch" en RetoList
+    var selectedArea by remember { mutableStateOf<com.example.presaber.ui.home.SubjectArea?>(null) }
+
     var isLoading by remember { mutableStateOf(false) }
     var retos by remember { mutableStateOf<List<Reto>>(emptyList()) }
     var currentReto by remember { mutableStateOf<Reto?>(null) }
     var resultadoFinal by remember { mutableStateOf<ResultadoData?>(null) }
 
-    // Estados PvP
     var pvpState by remember { mutableStateOf<PvPState>(
         if (codigoSalaCompartido != null) PvPState.UnirseSala(codigoSalaCompartido) else PvPState.Home
     ) }
     var areas by remember { mutableStateOf<List<Area>>(emptyList()) }
 
-    // Estado Simulacro Grupal
     var simulacroState by remember { mutableStateOf<SimulacroState>(SimulacroState.None) }
-
-    // Estado Simulacro Individual (ICFES)
     var simulacroIndividualState by remember { mutableStateOf<SimulacroIndividualState>(SimulacroIndividualState.None) }
+
     val simulacroViewModel: SimulacroEstudianteViewModel = viewModel()
     val scope = rememberCoroutineScope()
     var simulacroSeleccionado by remember { mutableStateOf<com.example.presaber.data.remote.SimulacroDisponible?>(null) }
 
-    // Recuperar sesión activa si se cerró la app
+    LaunchedEffect(selectedNavItem) {
+        if (selectedNavItem != 3) viewingStudentId = null
+    }
+
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.api.obtenerRacha(usuario.documento)
+            if (response.success) {
+                racha = response.data.rachaVictorias
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     LaunchedEffect(Unit) {
         val activeSimulacroId = SimulacroSessionManager.getActiveSimulacroId(context)
         if (activeSimulacroId != null) {
             simulacroState = SimulacroState.Quiz(activeSimulacroId)
         }
-
         try {
             areas = RetrofitClient.api.getAreas()
         } catch (e: Exception) {
@@ -99,7 +120,9 @@ fun HomeEstudiante(
         if (selectedArea != null && selectedNavItem == 0) {
             isLoading = true
             try {
-                val response = RetrofitClient.api.getRetosPorArea(selectedArea!!.id)
+                // CORRECCIÓN 3: Resolvemos el ID a partir del título, ya que el objeto visual no tiene ID
+                val areaId = getAreaId(selectedArea!!.title)
+                val response = RetrofitClient.api.getRetosPorArea(areaId)
                 retos = if (response.success) response.data else emptyList()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -112,7 +135,7 @@ fun HomeEstudiante(
 
     // MANEJO DE VISTAS
     when {
-        // --- FLUJO SIMULACRO INDIVIDUAL (ICFES) ---
+        // ... (Simulacro Individual flows - unchanged) ...
         simulacroIndividualState is SimulacroIndividualState.UltimoSimulacro -> {
             com.example.presaber.ui.simulacro.student.UltimoSimulacroScreen(
                 idUsuario = usuario.documento,
@@ -120,7 +143,6 @@ fun HomeEstudiante(
                 onComenzar = { simulacroIndividualState = SimulacroIndividualState.Disponibles }
             )
         }
-
         simulacroIndividualState is SimulacroIndividualState.Disponibles -> {
             com.example.presaber.ui.simulacro.student.SimulacrosDisponiblesScreen(
                 idEstudiante = usuario.documento,
@@ -131,7 +153,6 @@ fun HomeEstudiante(
                 }
             )
         }
-
         simulacroIndividualState is SimulacroIndividualState.Sesiones -> {
             val state = simulacroIndividualState as SimulacroIndividualState.Sesiones
             com.example.presaber.ui.simulacro.student.SimulacroSesionesScreen(
@@ -145,7 +166,6 @@ fun HomeEstudiante(
                 }
             )
         }
-
         simulacroIndividualState is SimulacroIndividualState.SesionQuiz -> {
             val state = simulacroIndividualState as SimulacroIndividualState.SesionQuiz
             com.example.presaber.ui.simulacro.student.SesionQuizScreen(
@@ -162,7 +182,6 @@ fun HomeEstudiante(
                 }
             )
         }
-
         simulacroIndividualState is SimulacroIndividualState.SesionResultado -> {
             val state = simulacroIndividualState as SimulacroIndividualState.SesionResultado
             com.example.presaber.ui.simulacro.student.SesionResultadoScreen(
@@ -174,69 +193,43 @@ fun HomeEstudiante(
             )
         }
 
-        // --- FLUJO SIMULACRO GRUPAL ---
-
-        // 1. Pantalla de Selección/Historial
+        // --- FLUJO SIMULACRO GRUPAL (Igual) ---
         simulacroState is SimulacroState.Unirse -> {
             UnirseSimulacroScreen(
                 usuario = usuario,
-                onNavigateToWaitingRoom = { id ->
-                    simulacroState = SimulacroState.SalaEspera(id)
-                },
-                onVerResultados = { id ->
-                    // Si viene del historial, va directo al Podio
-                    simulacroState = SimulacroState.Podio(id)
-                },
+                onNavigateToWaitingRoom = { id -> simulacroState = SimulacroState.SalaEspera(id) },
+                onVerResultados = { id -> simulacroState = SimulacroState.Podio(id) },
                 onBack = { simulacroState = SimulacroState.None }
             )
         }
-
-        // 2. Sala de Espera (Antes de iniciar)
         simulacroState is SimulacroState.SalaEspera -> {
             val state = simulacroState as SimulacroState.SalaEspera
             SalaEsperaEstudianteScreen(
                 idSimulacro = state.idSimulacro,
-                onStartQuiz = {
-                    simulacroState = SimulacroState.Quiz(state.idSimulacro)
-                }
+                onStartQuiz = { simulacroState = SimulacroState.Quiz(state.idSimulacro) }
             )
         }
-
-        // 3. Quiz Activo
         simulacroState is SimulacroState.Quiz -> {
             val state = simulacroState as SimulacroState.Quiz
             SimulacroQuizScreen(
                 idSimulacro = state.idSimulacro,
                 idEstudiante = usuario.documento,
-                onQuizFinished = {
-                    // Al terminar, va a la sala de espera de resultados (Progreso Clase)
-                    simulacroState = SimulacroState.EsperandoResultados(state.idSimulacro)
-                }
+                onQuizFinished = { simulacroState = SimulacroState.EsperandoResultados(state.idSimulacro) }
             )
         }
-
-        // 4. Esperando Resultados (Progreso de la clase en tiempo real)
         simulacroState is SimulacroState.EsperandoResultados -> {
             val state = simulacroState as SimulacroState.EsperandoResultados
             ResultadoEstudianteScreen(
                 idSimulacro = state.idSimulacro,
                 idEstudiante = usuario.documento,
-                onSimulacroFinalizado = {
-                    // Cuando el docente finaliza, vamos al Podio
-                    simulacroState = SimulacroState.Podio(state.idSimulacro)
-                }
+                onSimulacroFinalizado = { simulacroState = SimulacroState.Podio(state.idSimulacro) }
             )
         }
-
-        // 5. Podio Final (Confeti y ganadores)
         simulacroState is SimulacroState.Podio -> {
             val state = simulacroState as SimulacroState.Podio
-            // Usamos la pantalla de Podio que creaste para el estudiante
             SimulacroPodioScreen(
                 idSimulacro = state.idSimulacro,
-                onAceptar = {
-                    simulacroState = SimulacroState.None
-                }
+                onAceptar = { simulacroState = SimulacroState.None }
             )
         }
 
@@ -255,76 +248,75 @@ fun HomeEstudiante(
             Quiz(
                 reto = currentReto!!,
                 idEstudiante = usuario.documento,
-                onFinish = { resultado ->
-                    resultadoFinal = resultado
-                },
-                onExit = {
-                    currentReto = null
-                }
+                onFinish = { resultado -> resultadoFinal = resultado },
+                onExit = { currentReto = null }
             )
         }
 
         // --- FLUJO PVP ---
         selectedNavItem == 2 -> {
-            when (val state = pvpState) {
-                is PvPState.Home -> {
-                    StudentLayout(
-                        selectedNavItem = selectedNavItem,
-                        onNavItemSelected = { index -> selectedNavItem = index },
-                        showAccountDialog = showAccountDialog,
-                        usuario = usuario,
-                        onSignOut = onSignOut
-                    ) { paddingValues ->
-                        Box(modifier = Modifier.padding(paddingValues)) {
-                            PvPHomeScreen(
-                                idEstudiante = usuario.documento,
-                                onCrearSala = { pvpState = PvPState.CrearSala },
-                                onUnirseSala = { pvpState = PvPState.UnirseSala() }
-                            )
-                        }
+            if (pvpState is PvPState.Home) {
+                StudentLayout(
+                    selectedNavItem = selectedNavItem,
+                    onNavItemSelected = { index -> selectedNavItem = index },
+                    showAccountDialog = showAccountDialog,
+                    usuario = usuario,
+                    racha = racha,
+                    onSignOut = onSignOut
+                ) { paddingValues ->
+                    Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                        PvPHomeScreen(
+                            idEstudiante = usuario.documento,
+                            onCrearSala = { pvpState = PvPState.CrearSala },
+                            onUnirseSala = { pvpState = PvPState.UnirseSala() }
+                        )
                     }
                 }
-                is PvPState.CrearSala -> {
-                    CrearSalaScreen(
-                        idEstudiante = usuario.documento,
-                        areas = areas,
-                        onSalaCreada = { idSala -> pvpState = PvPState.SalaEspera(idSala) },
-                        onBack = { pvpState = PvPState.Home }
-                    )
-                }
-                is PvPState.UnirseSala -> {
-                    UnirseSalaScreen(
-                        idEstudiante = usuario.documento,
-                        codigoCompartido = state.codigoCompartido,
-                        onUnido = { idSala -> pvpState = PvPState.QuizPvP(idSala) },
-                        onBack = { pvpState = PvPState.Home }
-                    )
-                }
-                is PvPState.SalaEspera -> {
-                    SalaEsperaScreen(
-                        idSala = state.idSala,
-                        idEstudiante = usuario.documento,
-                        onIniciar = { pvpState = PvPState.QuizPvP(state.idSala) }
-                    )
-                }
-                is PvPState.QuizPvP -> {
-                    QuizPvPScreen(
-                        idSala = state.idSala,
-                        idEstudiante = usuario.documento,
-                        onFinish = { pvpState = PvPState.ResultadoPvP(state.idSala) }
-                    )
-                }
-                is PvPState.ResultadoPvP -> {
-                    ResultadoPvPScreen(
-                        idSala = state.idSala,
-                        idEstudiante = usuario.documento,
-                        onAceptar = { pvpState = PvPState.Home }
-                    )
+            } else {
+                when (val state = pvpState) {
+                    is PvPState.CrearSala -> {
+                        CrearSalaScreen(
+                            idEstudiante = usuario.documento,
+                            areas = areas,
+                            onSalaCreada = { idSala -> pvpState = PvPState.SalaEspera(idSala) },
+                            onBack = { pvpState = PvPState.Home }
+                        )
+                    }
+                    is PvPState.UnirseSala -> {
+                        UnirseSalaScreen(
+                            idEstudiante = usuario.documento,
+                            codigoCompartido = state.codigoCompartido,
+                            onUnido = { idSala -> pvpState = PvPState.QuizPvP(idSala) },
+                            onBack = { pvpState = PvPState.Home }
+                        )
+                    }
+                    is PvPState.SalaEspera -> {
+                        SalaEsperaScreen(
+                            idSala = state.idSala,
+                            idEstudiante = usuario.documento,
+                            onIniciar = { pvpState = PvPState.QuizPvP(state.idSala) }
+                        )
+                    }
+                    is PvPState.QuizPvP -> {
+                        QuizPvPScreen(
+                            idSala = state.idSala,
+                            idEstudiante = usuario.documento,
+                            onFinish = { pvpState = PvPState.ResultadoPvP(state.idSala) }
+                        )
+                    }
+                    is PvPState.ResultadoPvP -> {
+                        ResultadoPvPScreen(
+                            idSala = state.idSala,
+                            idEstudiante = usuario.documento,
+                            onAceptar = { pvpState = PvPState.Home }
+                        )
+                    }
+                    else -> {}
                 }
             }
         }
 
-        // --- HOME NORMAL (MENU) ---
+        // --- HOME NORMAL (MENU) Y OTRAS PESTAÑAS ---
         else -> {
             StudentLayout(
                 selectedNavItem = selectedNavItem,
@@ -333,13 +325,18 @@ fun HomeEstudiante(
                     if (index == 2) pvpState = PvPState.Home
                 },
                 showAccountDialog = showAccountDialog,
+                racha = racha,
                 usuario = usuario,
                 onSignOut = onSignOut
             ) { paddingValues ->
-                Box(modifier = Modifier.padding(paddingValues)) {
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                ) {
                     when (selectedNavItem) {
                         0 -> {
                             if (selectedArea != null) {
+                                // CORRECCIÓN 4: Pasamos el objeto del tipo correcto a RetoList
                                 RetoList(
                                     area = selectedArea!!,
                                     retos = retos,
@@ -349,15 +346,20 @@ fun HomeEstudiante(
                                 )
                             } else {
                                 HomeContent(
-                                    onSubjectClick = { area -> selectedArea = area },
-                                    // Al hacer click en "Unirse", cambiamos al estado del Simulacro
+                                    onSubjectClick = { area ->
+                                        selectedArea = com.example.presaber.ui.home.SubjectArea(
+                                            id = area.id,
+                                            title = area.title,
+                                            description = area.description,
+                                            imageRes = area.imageRes,
+                                            cardColor = area.cardColor
+                                        )
+                                    },
                                     onUnirseSimulacroClick = {
                                         simulacroState = SimulacroState.Unirse
                                     },
-                                    // Al hacer click en "Simulacro", cargamos el último simulacro o mostramos disponibles
                                     onSimulacroClick = {
                                         simulacroViewModel.cargarUltimoSimulacro(usuario.documento)
-                                        // Esperamos un momento para que se cargue, luego decidimos qué mostrar
                                         scope.launch {
                                             delay(500)
                                             val ultimo = simulacroViewModel.ultimoSimulacro.value
@@ -371,13 +373,54 @@ fun HomeEstudiante(
                                 )
                             }
                         }
-                        1 -> Box {}
-                        2 -> Box {}
-                        3 -> Box {}
-                        4 -> Box {}
+                        1 -> Box(Modifier.fillMaxSize(), Alignment.Center) { Text("IA - Próximamente") }
+
+                        // 3. GRUPOS (Integración de CourseDetail y Profile)
+                        3 -> {
+                            if (viewingStudentId == null) {
+                                // Muestra el curso
+                                StudentCourseDetailScreen(
+                                    grado = usuario.grado,
+                                    grupo = usuario.grupo,
+                                    cohorte = usuario.cohorte,
+                                    idInstitucion = usuario.institucion,
+                                    onBack = { selectedNavItem = 0 },
+                                    onStudentClick = { studentId ->
+                                        // Ir al perfil del compañero
+                                        viewingStudentId = studentId
+                                    }
+                                )
+                            } else {
+                                // Muestra el perfil del compañero
+                                StudentProfileScreen(
+                                    studentId = viewingStudentId!!,
+                                    onBack = { viewingStudentId = null } // Volver al curso
+                                )
+                            }
+                        }
+
+                        // 4. MI PERFIL
+                        4 -> {
+                            StudentProfileScreen(
+                                studentId = usuario.documento, // Mi propio perfil
+                                onBack = { selectedNavItem = 0 }
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+// Helper para convertir nombre a ID (ya que el objeto visual no tiene ID)
+fun getAreaId(title: String): Int {
+    return when(title) {
+        "Lectura Crítica" -> 1
+        "Matemáticas" -> 2
+        "Ciencias Naturales" -> 3
+        "Ciencias Sociales y Ciudadanas" -> 4
+        "Inglés" -> 5
+        else -> 0
     }
 }

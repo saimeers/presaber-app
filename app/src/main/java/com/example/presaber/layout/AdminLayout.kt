@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.presaber.R
 import com.example.presaber.data.remote.Usuario
-import com.example.presaber.ui.layout.AccountDialog
+import com.example.presaber.layout.components.AccountDialog
 import com.google.firebase.auth.FirebaseAuth
 
 // Definimos los ítems de navegación del Admin
@@ -162,114 +162,11 @@ fun AdminLayout(
     )
 
     if (showAccountDialog.value) {
-        AccountDialogAdmin(
+        AccountDialog(
             usuario = usuario,
             onDismiss = { showAccountDialog.value = false },
-            onSignOut = onSignOut
+            onSignOut = onSignOut,
+            isInPreview = isInPreview
         )
-    }
-}
-
-@Composable
-fun AccountDialogAdmin(
-    usuario: Usuario?,
-    onDismiss: () -> Unit,
-    onSignOut: () -> Unit
-) {
-    val currentUser = FirebaseAuth.getInstance().currentUser
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Color(0xFFF0F3FF),
-        title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        painter = painterResource(R.drawable.icon_close),
-                        contentDescription = "Cerrar",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                if (currentUser?.photoUrl != null) {
-                    AsyncImage(
-                        model = currentUser.photoUrl,
-                        contentDescription = "Foto de perfil",
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                    )
-                } else {
-                    Image(
-                        painter = painterResource(id = R.drawable.icon_user_settings),
-                        contentDescription = "Foto de perfil",
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = currentUser?.displayName ?: "Administrador",
-                    fontSize = 20.sp,
-                    color = Color(0xFF1A1B21),
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = currentUser?.email ?: "admin@presaber.com",
-                    color = Color.Gray,
-                    fontSize = 14.sp
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-                Divider(color = Color(0xFFB0C4DE).copy(alpha = 0.5f))
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Opciones del menú
-                AdminAccountOption(icon = R.drawable.icon_user_settings, text = "Configuración Global") {}
-                AdminAccountOption(icon = R.drawable.icon_logout, text = "Cerrar sesión") {
-                    onSignOut()
-                    onDismiss()
-                }
-            }
-        },
-        confirmButton = {}
-    )
-}
-
-@Composable
-fun AdminAccountOption(icon: Int, text: String, onClick: () -> Unit) {
-    TextButton(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF1A1B21))
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                painter = painterResource(icon),
-                contentDescription = null,
-                tint = Color(0xFF5B7BC6),
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(text, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-        }
     }
 }

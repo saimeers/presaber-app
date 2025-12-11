@@ -1,10 +1,19 @@
-package com.example.presaber.ui.admin.simulacro
+package com.example.presaber.ui.admin.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.presaber.data.remote.*
+import com.example.presaber.data.remote.ActualizarSimulacroRequest
+import com.example.presaber.data.remote.AgregarPreguntaRequest
+import com.example.presaber.data.remote.AsignacionCurso
+import com.example.presaber.data.remote.AsignarSimulacroRequest
+import com.example.presaber.data.remote.CrearSimulacroGrandeRequest
+import com.example.presaber.data.remote.CursoResponse
+import com.example.presaber.data.remote.EstructuraICFES
+import com.example.presaber.data.remote.Institucion
 import com.example.presaber.data.remote.RetrofitClient
+import com.example.presaber.data.remote.SimulacroAdmin
+import com.example.presaber.data.remote.SimulacroCompleto
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -187,7 +196,7 @@ open class SimulacroAdminViewModel : ViewModel() {
     fun cargarInstituciones() {
         viewModelScope.launch {
             try {
-                _instituciones.value = RetrofitClient.api.getInstituciones()
+                _instituciones.value = RetrofitClient.api.getInstituciones().data
             } catch (e: Exception) {
                 Log.e(TAG, "Error cargando instituciones", e)
             }
@@ -245,4 +254,3 @@ open class SimulacroAdminViewModel : ViewModel() {
         }
     }
 }
-
